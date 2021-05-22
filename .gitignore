@@ -1,8 +1,15 @@
 .DS_Store
 .vscode
 bin
+build
+test
 
 *.exe
 *.out
 *.o
 *.zip
+
+Tiny-Pascal
+LLVM_IR
+print.t
+compile_commands.json
