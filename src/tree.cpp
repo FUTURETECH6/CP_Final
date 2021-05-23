@@ -644,7 +644,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
 
 void tree::printTree(std::string filename, Base *root) {
     std::string str = print_rec(root, 0);
-    std::ofstream SaveFile(filename + ".t");
+    std::ofstream SaveFile(filename);
     SaveFile << str;
     SaveFile.close();
 }

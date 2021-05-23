@@ -112,12 +112,12 @@ llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
     std::cout << "Const defining: " << this->name << std::endl;
     if (this->value->node_type == N_CONSTANT_EXP) {  // 如果值是常量
         tree::ConstantExp *opLeft = static_cast<ConstantExp *>(this->value);  //
-        llvm::Value *alloc       = new llvm::AllocaInst(  // 为常量分配空间
+        llvm::Value *alloc        = new llvm::AllocaInst(  // 为常量分配空间
             context->getLLVMTy(opLeft->return_type),  // Type *Ty                 // 类型
             0,                                        // unsigned AddrSpace
             llvm::Twine(this->name),  // const Twine &Name        // 常量名称
             context->getCurBlock());  // BasicBlock *InsertAtEnd
-        llvm::Value *store       = new llvm::StoreInst(  // 将常量的值赋到空间中
+        llvm::Value *store        = new llvm::StoreInst(  // 将常量的值赋到空间中
             opLeft->codeGen(context),  // Value *Val              // 常量的值
             alloc,                     // Value *Ptr              // 常量的地址
             false,                     // bool isVolatile         // 不可更改
@@ -687,15 +687,15 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
         llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
     // 定义循环变量
     tree::VariableExp *loopVar   = new tree::VariableExp(this->iter);
-    loopVar->return_type        = tree::findVar(this->iter, this);
-    loopVar->name               = this->iter;
+    loopVar->return_type         = tree::findVar(this->iter, this);
+    loopVar->name                = this->iter;
     tree::AssignStm *initLoopVar = new tree::AssignStm(  // 为循环变量赋初值
         loopVar, this->start);
     initLoopVar->codeGen(context);  // 生成赋初值的代码 (i := start)
     llvm::BranchInst::Create(       // 跳转入 startBlock
         startBlock, context->getCurBlock());
     // 循环过程
-    context->pushBlock(startBlock);            // startBlock
+    context->pushBlock(startBlock);              // startBlock
     tree::BinaryExp *cmp = new tree::BinaryExp(  // 判断循环变量是否到达终点值
         OP_EQUAL, loopVar, this->end);
     llvm::Instruction *ret =
@@ -708,10 +708,10 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
     // 循环变量的更新
     tree::BinaryExp *update;
     tree::Value *tmp               = new tree::Value();
-    tmp->base_type                = TY_INTEGER;
-    tmp->val.integer_value        = this->step;  // 1 为 to ， -1 为 downto
+    tmp->base_type                 = TY_INTEGER;
+    tmp->val.integer_value         = this->step;  // 1 为 to ， -1 为 downto
     tree::ConstantExp *int1        = new tree::ConstantExp(tmp);
-    update                        = new tree::BinaryExp(  // i + 1 或 i - 1
+    update                         = new tree::BinaryExp(  // i + 1 或 i - 1
         OP_ADD, loopVar, int1);
     tree::AssignStm *updateLoopVar = new tree::AssignStm(  // 更新循环变量的语句
         loopVar, update);

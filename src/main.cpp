@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "tree.h"
 #include "codegen.h"
 #include "parser.hpp"
+#include "tree.h"
 
 extern int doyyparse(char *file);
 extern tree::Program *ast_root;
@@ -10,7 +10,7 @@ extern tree::Program *ast_root;
 int main(int argc, char **argv) {
     doyyparse(argv[1]);
     std::cout << "after yyparse()" << std::endl;
-    tree::printTree("print", ast_root);
+    tree::printTree("a.tree", ast_root);
 
     if (ast_root->checkSemantics() == false) {
         return 0;

@@ -2,7 +2,8 @@
 .vscode
 bin
 build
-test
+test/*.*
+!test/*.pas
 
 *.exe
 *.out
@@ -11,6 +12,6 @@ test
 
 Tiny-Pascal
 MiniPascal
-LLVM_IR
-print.t
+bitcode.bin
+a.tree
 compile_commands.json

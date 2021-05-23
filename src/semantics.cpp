@@ -1,5 +1,5 @@
-#include "tree.h"
 #include "symbol.h"
+#include "tree.h"
 
 using namespace tree;
 
