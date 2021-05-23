@@ -1,27 +1,25 @@
 %{
+#include "symbol.h"
+#include "tree.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "util.h"
-#include "ast.h"
 
 extern "C" int yylex(void);
-extern "C" FILE* yyin;
-
+extern "C" FILE *yyin;
 
 int currentSymTabSize = 0;
 sym_tab_node symtab[SYM_TAB_LEN];
 
-ast::Program* ast_root;
-std::vector<ast::TypeDef *> tmp;
+tree::Program *ast_root;
+std::vector<tree::TypeDef *> tmp;
 %}
 
 %code requires {
     #include <iostream>
-    #include "ast.h"
+    #include "tree.h"
     using namespace std;
-    using namespace ast;
-
+    using namespace tree;
 }
 
 // start symbol
@@ -44,13 +42,13 @@ std::vector<ast::TypeDef *> tmp;
     Stm* stm;
     Exp* exp;
     CallExp* callexp;
-    ast::Type* type;
+    tree::Type* type;
     TypeDef* tydef;
     VarDef* vardef;
     FunctionDef* functiondef;
     std::vector<string> *str;
     std::vector<Exp *> *expVal;
-    std::vector<ast::Type *> *tyVal;
+    std::vector<tree::Type *> *tyVal;
     std::vector<LabelDef *> *labelVal;
     std::vector<ConstDef *> *constVal;
     std::vector<TypeDef *> *typeVal;
@@ -368,4 +366,3 @@ int doyyparse(char *file) {
 
     return 0;
 }
-

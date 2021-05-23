@@ -1,8 +1,8 @@
-#include "ast.h"
+#include "tree.h"
 #include <fstream>
 #include <iostream>
 
-using namespace ast;
+using namespace tree;
 using namespace std;
 
 // functions for Program
@@ -642,14 +642,14 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
     return str;
 }
 
-void ast::printTree(std::string filename, Base *root) {
+void tree::printTree(std::string filename, Base *root) {
     std::string str = print_rec(root, 0);
     std::ofstream SaveFile(filename + ".t");
     SaveFile << str;
     SaveFile.close();
 }
 
-Type *ast::findType(const std::string &type_name, Base *node) {
+Type *tree::findType(const std::string &type_name, Base *node) {
     switch (node->node_type) {
         case N_PROGRAM: return findType(type_name, ((Program *)node)->define);
         case N_FUNCTION_DEF: {
@@ -698,7 +698,7 @@ Type *ast::findType(const std::string &type_name, Base *node) {
         default: return nullptr;
     }
 }
-Type *ast::copyType(Type *origin) {
+Type *tree::copyType(Type *origin) {
     auto *copy        = new Type();
     copy->name        = origin->name;
     copy->base_type   = origin->base_type;
@@ -710,7 +710,7 @@ Type *ast::copyType(Type *origin) {
     return copy;
 }
 
-bool ast::isSameType(Type *type1, Type *type2) {
+bool tree::isSameType(Type *type1, Type *type2) {
     if (type1->base_type == type2->base_type)
         switch (type1->base_type) {
             case TY_INTEGER:
@@ -734,7 +734,7 @@ bool ast::isSameType(Type *type1, Type *type2) {
     return false;
 }
 
-Base *ast::findName(const std::string &name, ast::Base *node) {
+Base *tree::findName(const std::string &name, tree::Base *node) {
     switch (node->node_type) {
         case N_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
@@ -800,7 +800,7 @@ Base *ast::findName(const std::string &name, ast::Base *node) {
     }
 }
 
-bool ast::canFindLabel(const int &label, Base *node) {
+bool tree::canFindLabel(const int &label, Base *node) {
     switch (node->node_type) {
         case N_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
@@ -842,7 +842,7 @@ bool ast::canFindLabel(const int &label, Base *node) {
     }
 }
 
-ConstDef *ast::findConst(const std::string &type_name, Base *node) {
+ConstDef *tree::findConst(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
@@ -852,7 +852,7 @@ ConstDef *ast::findConst(const std::string &type_name, Base *node) {
         return nullptr;
 }
 
-Type *ast::findVar(const std::string &type_name, Base *node) {
+Type *tree::findVar(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
@@ -864,7 +864,7 @@ Type *ast::findVar(const std::string &type_name, Base *node) {
         return nullptr;
 }
 
-FunctionDef *ast::findFunction(const std::string &type_name, Base *node) {
+FunctionDef *tree::findFunction(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;

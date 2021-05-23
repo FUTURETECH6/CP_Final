@@ -10,6 +10,7 @@ test
 *.zip
 
 Tiny-Pascal
+MiniPascal
 LLVM_IR
 print.t
 compile_commands.json

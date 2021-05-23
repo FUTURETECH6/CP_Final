@@ -22,7 +22,7 @@ llvm::Function *createPrintf(CodeGenContext *context) {
 }
 
 int getRecordIndex(
-    ast::Type *recType, std::string name)  // 对于记录类型，寻找某一个变量的 index
+    tree::Type *recType, std::string name)  // 对于记录类型，寻找某一个变量的 index
 {
     for (int i = 0; i < recType->child_type.size(); i++) {
         if (name == recType->child_type[i]->name) {
@@ -35,9 +35,9 @@ int getRecordIndex(
 }
 
 llvm::Value *getArrRef(
-    ast::BinaryExp *exp, CodeGenContext *context)  // 获得一个 llvm 数组某下标的地址
+    tree::BinaryExp *exp, CodeGenContext *context)  // 获得一个 llvm 数组某下标的地址
 {
-    std::string arrName = static_cast<ast::VariableExp *>(exp->operand1)->name;
+    std::string arrName = static_cast<tree::VariableExp *>(exp->operand1)->name;
 
     if (exp->operand1->node_type == N_VARIABLE_EXP) {  // 如果二元表达式第一个参数是变量表达式
         std::vector<llvm::Value *> arrIdx(2);
@@ -59,31 +59,31 @@ llvm::Value *getArrRef(
 
 /* ================== code generate =================== */
 
-llvm::Value *ast::Body::codeGen(CodeGenContext *context) {
-    for (ast::Stm *stm : this->stms) {
+llvm::Value *tree::Body::codeGen(CodeGenContext *context) {
+    for (tree::Stm *stm : this->stms) {
         stm->codeGen(context);
         std::cout << "[Success] A statment generated" << std::endl;
     }
     return nullptr;
 }
 
-llvm::Value *ast::Program::codeGen(CodeGenContext *context) {
+llvm::Value *tree::Program::codeGen(CodeGenContext *context) {
     llvm::Value *lastDef = nullptr;
 
     if (this->define != nullptr) {
-        for (ast::ConstDef *conDef : this->define->const_def) {  // 全局常量定义
+        for (tree::ConstDef *conDef : this->define->const_def) {  // 全局常量定义
             lastDef = conDef->codeGen(context);
             std::cout << "[Success] Program defined a const: " << conDef->name << std::endl;
         }
 
-        for (ast::VarDef *varDef : this->define->var_def) {
+        for (tree::VarDef *varDef : this->define->var_def) {
             varDef->is_global = true;
             lastDef           = varDef->codeGen(context);
             std::cout << "[Success] Program defined a gloable variable: " << varDef->name
                       << std::endl;
         }
 
-        for (ast::FunctionDef *funDef : this->define->function_def) {
+        for (tree::FunctionDef *funDef : this->define->function_def) {
             lastDef = funDef->codeGen(context);
             std::cout << "[Success] Program defined a function: " << funDef->name
                       << std::endl;
@@ -96,22 +96,22 @@ llvm::Value *ast::Program::codeGen(CodeGenContext *context) {
     return lastDef;
 }
 
-llvm::Value *ast::Define::codeGen(CodeGenContext *context) {
+llvm::Value *tree::Define::codeGen(CodeGenContext *context) {
     return nullptr;
 }
 
-llvm::Value *ast::Situation::codeGen(CodeGenContext *context) {
+llvm::Value *tree::Situation::codeGen(CodeGenContext *context) {
     return this->solution->codeGen(context);
 }
 
-llvm::Value *ast::LabelDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::LabelDef::codeGen(CodeGenContext *context) {
     return nullptr;
 }
 
-llvm::Value *ast::ConstDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
     std::cout << "Const defining: " << this->name << std::endl;
     if (this->value->node_type == N_CONSTANT_EXP) {  // 如果值是常量
-        ast::ConstantExp *opLeft = static_cast<ConstantExp *>(this->value);  //
+        tree::ConstantExp *opLeft = static_cast<ConstantExp *>(this->value);  //
         llvm::Value *alloc       = new llvm::AllocaInst(  // 为常量分配空间
             context->getLLVMTy(opLeft->return_type),  // Type *Ty                 // 类型
             0,                                        // unsigned AddrSpace
@@ -132,11 +132,11 @@ llvm::Value *ast::ConstDef::codeGen(CodeGenContext *context) {
     }
 }
 
-llvm::Value *ast::TypeDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::TypeDef::codeGen(CodeGenContext *context) {
     context->getCurCodeGenBlock()->typedefs[this->name] = this->type;  // 定义类型
 }
 
-llvm::Value *ast::VarDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
     std::cout << "Variable defining: " << this->name << std::endl;
 
     llvm::Value *alloc;
@@ -221,7 +221,7 @@ llvm::Value *ast::VarDef::codeGen(CodeGenContext *context) {
     return alloc;
 }
 
-llvm::Value *ast::FunctionDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     std::cout << "Function defining: " << this->name << std::endl;
     context->defined_functions[this->name] = this;
 
@@ -289,11 +289,11 @@ llvm::Value *ast::FunctionDef::codeGen(CodeGenContext *context) {
 
     if (this->define != nullptr) {
         std::cout << "|--- Function variable define" << std::endl;
-        for (ast::VarDef *var_d : this->define->var_def) {
+        for (tree::VarDef *var_d : this->define->var_def) {
             var_d->codeGen(context);
         }
 
-        for (ast::FunctionDef *func_d : this->define->function_def) {
+        for (tree::FunctionDef *func_d : this->define->function_def) {
             func_d->codeGen(context);
         }
 
@@ -323,11 +323,11 @@ llvm::Value *ast::FunctionDef::codeGen(CodeGenContext *context) {
     return func;
 }
 
-llvm::Value *ast::AssignStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating assignment statment..." << std::endl;
 
     if (this->left_value->node_type == N_BINARY_EXP) {  // 如果左值为二元表达式
-        ast::BinaryExp *op1 = static_cast<ast::BinaryExp *>(this->left_value);
+        tree::BinaryExp *op1 = static_cast<tree::BinaryExp *>(this->left_value);
         if (op1->op_code == OP_INDEX) {                         // 为取数组下标
             llvm::Value *elementPtr = getArrRef(op1, context);  // 取得目标地址
             std::cout << "[Success] Assignment statment generate" << std::endl;
@@ -341,7 +341,7 @@ llvm::Value *ast::AssignStm::codeGen(CodeGenContext *context) {
             exit(0);
         }
     } else if (this->left_value->node_type == N_VARIABLE_EXP) {  // 如果左值为变量
-        ast::VariableExp *op1 = static_cast<ast::VariableExp *>(this->left_value);
+        tree::VariableExp *op1 = static_cast<tree::VariableExp *>(this->left_value);
         if (op1->codeGen(context)->getType()->isArrayTy()) {  // 如果左值是数组类型
             std::cout << "[Error] Wrong left value type" << std::endl;
             exit(0);
@@ -363,14 +363,14 @@ llvm::Value *ast::AssignStm::codeGen(CodeGenContext *context) {
     }
 }
 
-llvm::Value *ast::CallStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
     std::cout << "Calling function: " << this->name << std::endl;
     if (this->name == "write" || this->name == "writeln") {  // 对 write 进行特判
         bool isWriteln = (this->name == "writeln");
         std::string printf_format;
         std::vector<llvm::Value *> printfArgs;
 
-        for (ast::Exp *arg : this->args) {
+        for (tree::Exp *arg : this->args) {
             llvm::Value *argValue = arg->codeGen(context);  // 得到参数的值
             if (argValue->getType() == llvm::Type::getInt32Ty(MyContext)) {
                 printf_format += "%d";
@@ -482,12 +482,12 @@ llvm::Value *ast::CallStm::codeGen(CodeGenContext *context) {
     }
     std::vector<llvm::Value *> argValues;
     auto funcArgs_iter = func->arg_begin();
-    for (ast::Exp *arg : this->args) {
+    for (tree::Exp *arg : this->args) {
         llvm::Value *funcArgValue = static_cast<llvm::Value *>(funcArgs_iter++);
         if (funcArgValue->getType()->isPointerTy()) {  // 如果这个参数是指针（全局变量）
             if (arg->node_type == N_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
-                    static_cast<ast::VariableExp *>(arg)->name);  // 取得变量的值
+                    static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
                 while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
                     ptr = new llvm::LoadInst(
                         ptr, llvm::Twine(""), false, context->getCurBlock());
@@ -548,11 +548,11 @@ llvm::Value *ast::CallStm::codeGen(CodeGenContext *context) {
         func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlock());
 }
 
-llvm::Value *ast::LabelStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::LabelStm::codeGen(CodeGenContext *context) {
     return nullptr;
 }
 
-llvm::Value *ast::IfStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::IfStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating if statment" << std::endl;
     llvm::Value *cond = condition->codeGen(context);
     std::cout << "|--- [Success] Condition generated" << std::endl;
@@ -587,7 +587,7 @@ llvm::Value *ast::IfStm::codeGen(CodeGenContext *context) {
     return ret;
 }
 
-llvm::Value *ast::CaseStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating case statment" << std::endl;
     llvm::BasicBlock *exitBlock =
         llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
@@ -601,7 +601,7 @@ llvm::Value *ast::CaseStm::codeGen(CodeGenContext *context) {
                 MyContext, llvm::Twine("case"), context->getCurFunc());
 
             std::cout << "|--- In case " << i << ":" << j << std::endl;
-            ast::BinaryExp *cond = new ast::BinaryExp(
+            tree::BinaryExp *cond = new tree::BinaryExp(
                 OP_EQUAL, this->object, this->situations[i]->match_list[j]);
 
             if (i == this->situations.size() - 1 &&
@@ -639,7 +639,7 @@ llvm::Value *ast::CaseStm::codeGen(CodeGenContext *context) {
             std::cout << "in case No." << i << std::endl;
             std::cout << "|__case's No." << j << std::endl;
 
-            ast::BinaryExp *cond = new ast::BinaryExp(
+            tree::BinaryExp *cond = new tree::BinaryExp(
                 OP_EQUAL, this->object, this->situations[i]->match_list[j]);
 
             llvm::BasicBlock *nextBlock;
@@ -677,7 +677,7 @@ llvm::Value *ast::CaseStm::codeGen(CodeGenContext *context) {
     return ret;
 }
 
-llvm::Value *ast::ForStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating for statement" << std::endl;
     llvm::BasicBlock *startBlock =
         llvm::BasicBlock::Create(MyContext, llvm::Twine("start"), context->getCurFunc());
@@ -686,17 +686,17 @@ llvm::Value *ast::ForStm::codeGen(CodeGenContext *context) {
     llvm::BasicBlock *exitBlock =
         llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
     // 定义循环变量
-    ast::VariableExp *loopVar   = new ast::VariableExp(this->iter);
-    loopVar->return_type        = ast::findVar(this->iter, this);
+    tree::VariableExp *loopVar   = new tree::VariableExp(this->iter);
+    loopVar->return_type        = tree::findVar(this->iter, this);
     loopVar->name               = this->iter;
-    ast::AssignStm *initLoopVar = new ast::AssignStm(  // 为循环变量赋初值
+    tree::AssignStm *initLoopVar = new tree::AssignStm(  // 为循环变量赋初值
         loopVar, this->start);
     initLoopVar->codeGen(context);  // 生成赋初值的代码 (i := start)
     llvm::BranchInst::Create(       // 跳转入 startBlock
         startBlock, context->getCurBlock());
     // 循环过程
     context->pushBlock(startBlock);            // startBlock
-    ast::BinaryExp *cmp = new ast::BinaryExp(  // 判断循环变量是否到达终点值
+    tree::BinaryExp *cmp = new tree::BinaryExp(  // 判断循环变量是否到达终点值
         OP_EQUAL, loopVar, this->end);
     llvm::Instruction *ret =
         llvm::BranchInst::Create(exitBlock,  // 到达终点值，跳入 exitBlock
@@ -706,14 +706,14 @@ llvm::Value *ast::ForStm::codeGen(CodeGenContext *context) {
     context->pushBlock(loopBlock);  // loopBlock
     this->loop->codeGen(context);   // 生成代码块
     // 循环变量的更新
-    ast::BinaryExp *update;
-    ast::Value *tmp               = new ast::Value();
+    tree::BinaryExp *update;
+    tree::Value *tmp               = new tree::Value();
     tmp->base_type                = TY_INTEGER;
     tmp->val.integer_value        = this->step;  // 1 为 to ， -1 为 downto
-    ast::ConstantExp *int1        = new ast::ConstantExp(tmp);
-    update                        = new ast::BinaryExp(  // i + 1 或 i - 1
+    tree::ConstantExp *int1        = new tree::ConstantExp(tmp);
+    update                        = new tree::BinaryExp(  // i + 1 或 i - 1
         OP_ADD, loopVar, int1);
-    ast::AssignStm *updateLoopVar = new ast::AssignStm(  // 更新循环变量的语句
+    tree::AssignStm *updateLoopVar = new tree::AssignStm(  // 更新循环变量的语句
         loopVar, update);
     updateLoopVar->codeGen(context);  // i := i + 1 或 i := i - 1
     llvm::BranchInst::Create(         // 跳入 startBlock
@@ -725,7 +725,7 @@ llvm::Value *ast::ForStm::codeGen(CodeGenContext *context) {
     return ret;
 }
 
-llvm::Value *ast::WhileStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::WhileStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating while statement" << std::endl;
     llvm::BasicBlock *startBlock =
         llvm::BasicBlock::Create(MyContext, llvm::Twine("start"), context->getCurFunc());
@@ -750,7 +750,7 @@ llvm::Value *ast::WhileStm::codeGen(CodeGenContext *context) {
     return ret;
 }
 
-llvm::Value *ast::RepeatStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::RepeatStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating repeat statement" << std::endl;
     llvm::BasicBlock *loopBlock =
         llvm::BasicBlock::Create(MyContext, llvm::Twine("loop"), context->getCurFunc());
@@ -770,11 +770,11 @@ llvm::Value *ast::RepeatStm::codeGen(CodeGenContext *context) {
     return ret;
 }
 
-llvm::Value *ast::GotoStm::codeGen(CodeGenContext *context) {
+llvm::Value *tree::GotoStm::codeGen(CodeGenContext *context) {
     return nullptr;
 }
 
-llvm::Value *ast::UnaryExp::codeGen(CodeGenContext *context) {
+llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
     switch (this->op_code) {
         case OP_NOT:
             return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
@@ -874,10 +874,10 @@ llvm::Value *ast::UnaryExp::codeGen(CodeGenContext *context) {
     }
 }
 
-llvm::Value *ast::BinaryExp::codeGen(CodeGenContext *context) {
+llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
     if (this->op_code == OP_DOT) {                          // record
         if (this->operand2->node_type == N_VARIABLE_EXP) {  // 操作符 2 是变量
-            ast::VariableExp *op2 = static_cast<ast::VariableExp *>(this->operand2);
+            tree::VariableExp *op2 = static_cast<tree::VariableExp *>(this->operand2);
             int index = getRecordIndex(  // 找到所求变量在记录中的位置
                 this->operand1->return_type, op2->name);
             std::vector<llvm::Value *> arrIdx(2);
@@ -895,7 +895,7 @@ llvm::Value *ast::BinaryExp::codeGen(CodeGenContext *context) {
         }
     } else if (this->op_code == OP_INDEX) {
         if (this->operand1->node_type == N_VARIABLE_EXP) {
-            ast::VariableExp *op1 = static_cast<ast::VariableExp *>(this->operand1);
+            tree::VariableExp *op1 = static_cast<tree::VariableExp *>(this->operand1);
             std::vector<llvm::Value *> arrIdx(2);
             arrIdx[0]           = llvm::ConstantInt::get(MyContext, llvm::APInt(32, 0, true));
             arrIdx[1]           = this->operand2->codeGen(context);
@@ -1013,7 +1013,7 @@ llvm::Value *ast::BinaryExp::codeGen(CodeGenContext *context) {
     }
 }
 
-llvm::Value *ast::CallExp::codeGen(CodeGenContext *context) {
+llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
     std::cout << "Creating calling " << std::endl;
     llvm::Function *func = context->module->getFunction(this->name.c_str());
     if (func == nullptr) {
@@ -1022,12 +1022,12 @@ llvm::Value *ast::CallExp::codeGen(CodeGenContext *context) {
     }
     std::vector<llvm::Value *> argValues;
     auto funcArgs_iter = func->arg_begin();
-    for (ast::Exp *arg : this->args) {
+    for (tree::Exp *arg : this->args) {
         llvm::Value *funcArgValue = static_cast<llvm::Value *>(funcArgs_iter++);
         if (funcArgValue->getType()->isPointerTy()) {  // 如果这个参数是指针（全局变量）
             if (arg->node_type == N_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
-                    static_cast<ast::VariableExp *>(arg)->name);  // 取得变量的值
+                    static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
                 while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
                     ptr = new llvm::LoadInst(
                         ptr, llvm::Twine(""), false, context->getCurBlock());
@@ -1086,11 +1086,11 @@ llvm::Value *ast::CallExp::codeGen(CodeGenContext *context) {
         func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlock());
 }
 
-llvm::Value *ast::ConstantExp::codeGen(CodeGenContext *context) {
+llvm::Value *tree::ConstantExp::codeGen(CodeGenContext *context) {
     return value->codeGen(context);
 }
 
-llvm::Value *ast::VariableExp::codeGen(CodeGenContext *context) {
+llvm::Value *tree::VariableExp::codeGen(CodeGenContext *context) {
     std::cout << "loading variable: " << this->name << std::endl;
     llvm::Value *ptr = context->getValue(this->name);
     ptr = new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlock());
@@ -1100,11 +1100,11 @@ llvm::Value *ast::VariableExp::codeGen(CodeGenContext *context) {
     return ptr;
 }
 
-llvm::Value *ast::Type::codeGen(CodeGenContext *context) {
+llvm::Value *tree::Type::codeGen(CodeGenContext *context) {
     return nullptr;
 }
 
-llvm::Value *ast::Value::codeGen(CodeGenContext *context) {
+llvm::Value *tree::Value::codeGen(CodeGenContext *context) {
     switch (this->base_type) {
         case TY_INTEGER:
             return llvm::ConstantInt::get(

@@ -1,12 +1,13 @@
 #ifndef AST_H
 #define AST_H
-#include "util.h"
+#include "symbol.h"
 #include <llvm/IR/Value.h>
 #include <string>
 #include <vector>
 
 class CodeGenContext;
-namespace ast {
+
+namespace tree {
     // base object
     class Base;
     class Stm;  // without return value
@@ -406,5 +407,5 @@ namespace ast {
     Type *findVar(const std::string &type_name, Base *node);
     FunctionDef *findFunction(const std::string &type_name, Base *node);
 
-}  // namespace ast
+}  // namespace tree
 #endif

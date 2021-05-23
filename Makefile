@@ -1,6 +1,6 @@
 .PHONY: all clean scan progs dirs
 
-NAME = Tiny-Pascal
+BINARY = MiniPascal
 
 # Config Env
 LLVM_CONFIG = llvm-config-8
@@ -14,29 +14,28 @@ LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll
 
 all: dirs progs
 
-progs: Tiny-Pascal
-Tiny-Pascal: build/ast.o build/codegen.o build/main.o build/semantics.o build/util.o build/tokenizer.o build/parser.o
+progs: ${BINARY}
+${BINARY}: build/parser.o build/lexer.o build/tree.o build/symbol.o build/semantics.o build/codegen.o build/main.o
 	$(CXX) $^ ${LDFLAGS} -o $@
 
-build/ast.o: src/ast.cpp include/ast.h
+build/parser.o: build/parser.cpp
+	$(CXX) -o $@ -c $< ${CCFLAGS}
+build/lexer.o: build/lexer.cpp build/parser.cpp
+	$(CXX) -o $@ -c $< ${CCFLAGS}
+build/tree.o: src/tree.cpp include/tree.h
+	$(CXX) -o $@ -c $< ${CCFLAGS}
+build/symbol.o: src/symbol.cpp include/symbol.h
+	$(CXX) -o $@ -c $< ${CCFLAGS}
+build/semantics.o: src/semantics.cpp include/tree.h include/symbol.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 build/codegen.o: src/codegen.cpp include/codegen.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
-build/main.o: src/main.cpp include/ast.h include/codegen.h build/parser.cpp
-	$(CXX) -o $@ -c $< ${CCFLAGS}
-build/semantics.o: src/semantics.cpp include/ast.h include/util.h
-	$(CXX) -o $@ -c $< ${CCFLAGS}
-build/util.o: src/util.cpp include/util.h
+build/main.o: src/main.cpp include/tree.h include/codegen.h build/parser.cpp
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 
-build/tokenizer.o: build/tokenizer.cpp build/parser.cpp
-	$(CXX) -o $@ -c $< ${CCFLAGS}
-build/parser.o: build/parser.cpp
-	$(CXX) -o $@ -c $< ${CCFLAGS}
-
-build/tokenizer.cpp: src/${NAME}.l 
+build/lexer.cpp: src/lexer.l 
 	flex -o $@ $<
-build/parser.cpp: src/${NAME}.y 
+build/parser.cpp: src/parser.y 
 	bison -o $@ -d $<
 
 dirs: build
@@ -45,7 +44,7 @@ build:
 
 clean:
 	@rm -rf build
-	@rm -f Tiny-Pascal
+	@rm -f ${BINARY}
 	@rm -f LLVM_IR print.t
 
 scan:

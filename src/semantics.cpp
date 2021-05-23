@@ -1,7 +1,7 @@
-#include "ast.h"
-#include "util.h"
+#include "tree.h"
+#include "symbol.h"
 
-using namespace ast;
+using namespace tree;
 
 void yyerror(Base *err_node, const char *info) {
     fprintf(stderr, "%p: %s\n", err_node, info);

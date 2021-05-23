@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "ast.h"
+#include "tree.h"
 #include <set>
 #include <stack>
 
@@ -40,8 +40,8 @@ class CodeGenBlock {
   public:
     llvm::BasicBlock *block;
     CodeGenBlock *parent;
-    std::map<std::string, ast::Exp *> const_locals;
-    std::map<std::string, ast::Type *> typedefs;
+    std::map<std::string, tree::Exp *> const_locals;
+    std::map<std::string, tree::Type *> typedefs;
 };
 
 class CodeGenContext {
@@ -55,7 +55,7 @@ class CodeGenContext {
     llvm::Module *module = new llvm::Module("main", MyContext);
     std::map<llvm::Function *, llvm::Function *> parent;
     llvm::Function *printf;
-    std::map<std::string, ast::FunctionDef *> defined_functions;
+    std::map<std::string, tree::FunctionDef *> defined_functions;
 
     CodeGenContext() {}
 
@@ -63,7 +63,7 @@ class CodeGenContext {
 
     void setCurFunc(llvm::Function *func) { this->currentFunction = func; }
 
-    llvm::Type *getLLVMTy(ast::Type *type) {
+    llvm::Type *getLLVMTy(tree::Type *type) {
         if (type == nullptr) {
             return llvm::Type::getVoidTy(MyContext);
         }
@@ -81,7 +81,7 @@ class CodeGenContext {
 
             case TY_RECORD: {
                 std::vector<llvm::Type *> members;
-                for (ast::Type *child : type->child_type) {
+                for (tree::Type *child : type->child_type) {
                     members.push_back(this->getLLVMTy(child));
                 }
                 llvm::StructType *const rcd = llvm::StructType::create(MyContext,
@@ -93,7 +93,7 @@ class CodeGenContext {
             default: {
                 CodeGenBlock *curBlock = this->getCurCodeGenBlock();
                 while (curBlock != nullptr) {
-                    std::map<std::string, ast::Type *> typeTable = curBlock->typedefs;
+                    std::map<std::string, tree::Type *> typeTable = curBlock->typedefs;
                     if (typeTable.find(type->name) != typeTable.end()) {
                         return this->getLLVMTy(typeTable[type->name]);
                     }
@@ -104,7 +104,7 @@ class CodeGenContext {
         }
     }
 
-    void generateCode(ast::Program &root) {
+    void generateCode(tree::Program &root) {
         std::cout << "Generating code...\n";
 
         std::vector<llvm::Type *> argTypes;  // 对于一个函数，llvm需要一个参数类型表
@@ -177,7 +177,7 @@ class CodeGenContext {
         delete top;
     }
 
-    void insertConst(std::string name, ast::Exp *const_v) {
+    void insertConst(std::string name, tree::Exp *const_v) {
         blocks.top()->const_locals[name] = const_v;
     }
 

@@ -1,13 +1,13 @@
 %{
-#include <cstring>
-#include <cstdio>
-#include <cctype>
-#include "util.h"
 #include "parser.hpp"
+#include "symbol.h"
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 extern "C" int yylex();
-extern "C" void yyerror(const char* s);
-int transform(char* id, unsigned type);
-int search(char* id);
+extern "C" void yyerror(const char *s);
+int transform(char *id, unsigned type);
+int search(char *id);
 %}
 
 delimiter       [\t\n\r ]
@@ -120,14 +120,14 @@ comment         (\{.*\}|\(\*.*\*\)|\/\/.*)
 .                   printf("Unexpected symbol found. %s %d\n", yytext, yytext[0]);
 %%
 
-int transform(char* id, unsigned type = -1) {
+int transform(char *id, unsigned type = -1) {
     extern sym_tab_node symtab[];
     extern int currentSymTabSize;
 
     // convert to lower case
     char lower_id[100];
     strcpy(lower_id, id);
-    for (char* p = lower_id; *p; p++) {
+    for (char *p = lower_id; *p; p++) {
         *p = tolower(*p);
     }
     int result = search(id);
@@ -136,19 +136,18 @@ int transform(char* id, unsigned type = -1) {
         strcpy(symtab[currentSymTabSize].id, id);
         symtab[currentSymTabSize].type = type;
         return currentSymTabSize++;
-    }
-    else {
+    } else {
         return result;
     }
 }
-int search(char* id) {
+int search(char *id) {
     extern sym_tab_node symtab[];
     extern int currentSymTabSize;
 
     // convert to lower case
     char lower_id[100];
     strcpy(lower_id, id);
-    for (char* p = lower_id; *p; p++) {
+    for (char *p = lower_id; *p; p++) {
         *p = tolower(*p);
     }
 
