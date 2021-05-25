@@ -357,10 +357,11 @@ args_list:            args_list T_COMMA expression      {$$ = $1; $$->push_back(
 
 int doyyparse(char *file) {
     FILE *fp;
-    if ((fp = fopen(file, "r")) != NULL) {
+    if ((fp = fopen(file, "r")) != NULL)
         yyin = fp;
-    }else
+    else
         return -1;
+
     do {
         yyparse();
     } while (!feof(yyin));
