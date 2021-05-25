@@ -359,7 +359,8 @@ int doyyparse(char *file) {
     FILE *fp;
     if ((fp = fopen(file, "r")) != NULL) {
         yyin = fp;
-    }
+    }else
+        return -1;
     do {
         yyparse();
     } while (!feof(yyin));

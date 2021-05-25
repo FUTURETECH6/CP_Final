@@ -8,7 +8,10 @@ extern int doyyparse(char *file);
 extern tree::Program *ast_root;
 
 int main(int argc, char **argv) {
-    doyyparse(argv[1]);
+    if (doyyparse(argv[1])) {
+        throw std::runtime_error("No such file or directory");
+        return -1;
+    }
     std::cout << "after yyparse()" << std::endl;
     tree::printTree("a.tree", ast_root);
 

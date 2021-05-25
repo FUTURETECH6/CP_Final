@@ -74,7 +74,5 @@ test: all
 	done
 
 fmt:
-	$(LLVM_FMT) src/**.cpp include/*.h -i --style=file
-	for i in test1 test2 test3 test4 test5 test6 test7 ; do \
-		ptop -c ptop.cfg test/$$i.pas test/$$i.pas ; \
-	done
+	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
+	ls test/*.pas | xargs -i ptop -c ptop.cfg {} {}
