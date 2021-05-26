@@ -1,5 +1,5 @@
 
-program recursivegcd;
+program gcd;
 
 var 
   ans : integer;
@@ -13,13 +13,10 @@ begin
   else
     begin
       gcd := gcd(b , a % b);
-    end
-  ;
-end
-;
+    end;
+end;
 
 begin
   ans := gcd(9 , 36) * gcd(4 , 12);
   writeln(ans);
-end
-.
+end.

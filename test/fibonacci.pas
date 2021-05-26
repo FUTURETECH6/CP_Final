@@ -19,15 +19,11 @@ begin
       else
         begin
           fib := fib(a - 1) + fib(a - 2);
-        end
-      ;
-    end
-  ;
-end
-;
+        end;
+    end;
+end;
 
 begin
   i := fib(20);
   writeln(i);
-end
-.
+end.

@@ -1,9 +1,10 @@
 
-program globalk;
+program global_var;
 
 var 
   f : integer;
   k : integer;
+
 function go(var b : integer; a : integer): integer;
 
 var 
@@ -18,17 +19,14 @@ begin
   else
     begin
       go := 1;
-    end
-  ;
+    end;
   b := b + go;
   k := k + go;
-end
-;
+end;
 
 begin
   k := 0;
   f := go(k , 5);
   writeln(f);
   writeln(k);
-end
-.
+end.

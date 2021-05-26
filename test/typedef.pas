@@ -1,12 +1,11 @@
 
-program definedtype;
+program typedef;
 
 const 
   a = 3;
 
 type 
-  ar = array [0..10] of 
-       integer;
+  ar = array [0..10] of integer;
 
 var 
   c : ar;
@@ -28,7 +27,5 @@ begin
     begin
       c[i] := c[i] * c[i];
       writeln(c[i]);
-    end
-  ;
-end
-.
+    end;
+end.

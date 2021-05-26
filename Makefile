@@ -52,27 +52,26 @@ dirs: build
 build:
 	mkdir -p build
 
-clean: clean_tmp
+clean: clean_tmp clean_test
 	@rm -f ${TARGET}
 clean_tmp:
 	@rm -rf build
-	@rm -f bitcode.bin* a.tree
-	@rm -f test/*.ll test/*.lli test/*.s test/*.tree
-
+clean_test:
+	@rm -f a.bc* a.tree
+	@rm -f test/*.bc test/*.ll test/*.lli test/*.s test/*.tree
 
 scan:
 	intercept-build make && analyze-build
 
-test: all 
-	for i in test1 test2 test3 test4 test5 test6 test7 ; do \
-		./$(TARGET) test/$$i.pas ; \
-		$(LLVM_DIS) bitcode.bin ;  \
-		$(LLVM_LLC) bitcode.bin.ll -march=x86-64 ; \
-		mv a.tree test/$$i.tree ; \
-		mv bitcode.bin.ll test/$$i.ll ; \
-		mv bitcode.bin.s test/$$i.s ; \
+test: all
+	for i in $(patsubst %.pas, %, $(wildcard test/*.pas)) ; do \
+		./$(TARGET) $$i.pas ; \
+		mv a.bc $$i.bc ; \
+		mv a.tree $$i.tree ; \
+		$(LLVM_DIS) -o $$i.ll $$i.bc ;  \
+		$(LLVM_LLC) -o $$i.s $$i.ll -march=x86-64 ; \
 	done
 
 fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
-	ls test/*.pas | xargs -i ptop -c ptop.cfg {} {}
+	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}

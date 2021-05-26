@@ -1,5 +1,5 @@
 
-program nestedif;
+program nested_if;
 
 const 
   y = 1;

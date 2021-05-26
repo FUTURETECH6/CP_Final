@@ -143,7 +143,7 @@ class CodeGenContext {
 
         // 二进制代码
         std::error_code EC;
-        llvm::raw_fd_ostream OS("bitcode.bin", EC, llvm::sys::fs::F_None);
+        llvm::raw_fd_ostream OS("a.bc", EC, llvm::sys::fs::F_None);
         llvm::WriteBitcodeToFile(*this->module, OS);
         OS.flush();
     }
