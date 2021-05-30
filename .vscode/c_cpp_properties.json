@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/include/",
+                "${workspaceFolder}/build/",
+                "/usr/lib/llvm-8/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang-8",
+            "cStandard": "c99",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

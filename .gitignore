@@ -1,9 +1,10 @@
 .DS_Store
-.vscode
+.vscode/*
 bin
 build
 test/*.*
 !test/*.pas
+!.vscode/c_cpp_properties.json
 
 *.exe
 *.out
