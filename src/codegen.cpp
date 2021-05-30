@@ -134,6 +134,7 @@ llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
 
 llvm::Value *tree::TypeDef::codeGen(CodeGenContext *context) {
     context->getCurCodeGenBlock()->typedefs[this->name] = this->type;  // 定义类型
+    return nullptr;
 }
 
 llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
@@ -361,6 +362,7 @@ llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
         std::cout << "[Error] Wrong left value type" << std::endl;
         exit(0);
     }
+    return nullptr;
 }
 
 llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
@@ -872,6 +874,7 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
                 llvm::Type::getInt32Ty(MyContext), true, llvm::Twine(""),
                 context->getCurBlock());
     }
+    return nullptr;
 }
 
 llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {

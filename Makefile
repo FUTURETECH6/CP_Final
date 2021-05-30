@@ -1,10 +1,9 @@
-.PHONY: all clean scan test fmt progs dirs clean_tmp
+.PHONY: all clean scan test fmt progs dirs clean_tmp clean_test
 
 TARGET = MiniPascal
 
 # Config Env
-LLVM_DIR = /usr/lib/llvm-8/
-CXX = g++
+LLVM_DIR = /usr/lib/llvm-8
 
 # Binaries
 LLVM_CONFIG = ${LLVM_DIR}/bin/llvm-config
@@ -15,12 +14,15 @@ LLVM_LLI    = ${LLVM_DIR}/bin/lli
 LLVM_LLC    = ${LLVM_DIR}/bin/llc
 LLVM_FMT    = ${LLVM_DIR}/bin/clang-format
 
+# CXX = g++
+CXX = $(LLVM_CLANG)
+
 # Flags
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
 CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags) -g -std=c++11 ${INCLUDE}
-LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll
+LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs
 
