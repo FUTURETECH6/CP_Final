@@ -39,7 +39,8 @@ llvm::Value *getArrRef(
 {
     std::string arrName = static_cast<tree::VariableExp *>(exp->operand1)->name;
 
-    if (exp->operand1->node_type == N_VARIABLE_EXP) {  // 如果二元表达式第一个参数是变量表达式
+    if (exp->operand1->node_type ==
+        ND_VARIABLE_EXP) {  // 如果二元表达式第一个参数是变量表达式
         std::vector<llvm::Value *> arrIdx(2);
         arrIdx[0] = llvm::ConstantInt::get(
             MyContext, llvm::APInt(32, 0, true));  // 构建 llvm 整型常数，值为 0
@@ -110,7 +111,7 @@ llvm::Value *tree::LabelDef::codeGen(CodeGenContext *context) {
 
 llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
     std::cout << "Const defining: " << this->name << std::endl;
-    if (this->value->node_type == N_CONSTANT_EXP) {  // 如果值是常量
+    if (this->value->node_type == NX_CONST_EXP) {  // 如果值是常量
         tree::ConstantExp *opLeft = static_cast<ConstantExp *>(this->value);  //
         llvm::Value *alloc        = new llvm::AllocaInst(  // 为常量分配空间
             context->getLLVMTy(opLeft->return_type),  // Type *Ty                 // 类型
@@ -327,7 +328,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
 llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating assignment statment..." << std::endl;
 
-    if (this->left_value->node_type == N_BINARY_EXP) {  // 如果左值为二元表达式
+    if (this->left_value->node_type == ND_BINARY_EXP) {  // 如果左值为二元表达式
         tree::BinaryExp *op1 = static_cast<tree::BinaryExp *>(this->left_value);
         if (op1->op_code == OP_INDEX) {                         // 为取数组下标
             llvm::Value *elementPtr = getArrRef(op1, context);  // 取得目标地址
@@ -341,7 +342,7 @@ llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
             std::cout << "[Error] Wrong left value type" << std::endl;
             exit(0);
         }
-    } else if (this->left_value->node_type == N_VARIABLE_EXP) {  // 如果左值为变量
+    } else if (this->left_value->node_type == ND_VARIABLE_EXP) {  // 如果左值为变量
         tree::VariableExp *op1 = static_cast<tree::VariableExp *>(this->left_value);
         if (op1->codeGen(context)->getType()->isArrayTy()) {  // 如果左值是数组类型
             std::cout << "[Error] Wrong left value type" << std::endl;
@@ -423,58 +424,6 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
         return llvm::CallInst::Create(context->printf, llvm::makeArrayRef(printfArgs),
             llvm::Twine(""), context->getCurBlock());
     }
-    // if(name == "write" || name == "writeln"){
-    //   bool writeln = false;
-    //   if(name == "writeln")
-    //     writeln = true;
-    //   std::string printf_format;
-    //   std::vector<llvm::Value *> printf_args;
-    //
-    //   for(auto arg :args) {
-    //       llvm::Value* arg_val = arg->codeGen(context);
-    //       if (arg_val->getType() == llvm::Type::getInt32Ty(MyContext)) {
-    //           printf_format += "%d";
-    //           std::cout << "SysFuncCall write variable previous name" <<
-    //           arg_val->getName().str() << std::endl; printf_args.push_back(arg_val);
-    //       } else if (arg_val->getType()->isFloatTy()) {
-    //           printf_format += "%f";
-    //           printf_args.push_back(arg_val);
-    //       } else if (arg_val->getType() == llvm::Type::getInt8PtrTy(MyContext)) {
-    //           std::cout << "string print is not supported" << std::endl;
-    //       }
-    //   }
-    //
-    //   if (writeln)
-    //       printf_format += "\n";
-    //
-    //   std::cout << "Desierdsaefad Format: " << printf_format << std::endl;
-    //
-    //   llvm::Constant* printf_format_const = llvm::ConstantDataArray::getString(MyContext,
-    //   printf_format.c_str());
-    //
-    //   llvm::GlobalVariable* format_string_var = new
-    //   llvm::GlobalVariable(*context->module,llvm::ArrayType::get(llvm::IntegerType::get(MyContext,
-    //   8),strlen(printf_format.c_str())+ 1),true, llvm::GlobalValue::PrivateLinkage,
-    //   printf_format_const, ".str");
-    //
-    //   llvm::Constant* zero =
-    //   llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(MyContext));
-    //   std::vector<llvm::Constant *> arrIdx;
-    //   arrIdx.push_back(zero);
-    //   arrIdx.push_back(zero);
-    //
-    //   llvm::Constant* var_ref =
-    //   llvm::ConstantExpr::getGetElementPtr(llvm::ArrayType::get(llvm::IntegerType::get(MyContext,
-    //   8),strlen(printf_format.c_str())+ 1),format_string_var,arrIdx);
-    //
-    //   printf_args.insert(printf_args.begin(), var_ref);
-    //   auto call = llvm::CallInst::Create(context->printf, llvm::makeArrayRef(printf_args),
-    //   "", context->getCurBlock());
-    //   //llvm::ReturnInst::Create(llvm::getGlobalContext(), block);
-    //   std::cout << "write or writeln called" << std::endl;
-    //   //context->popBlock();
-    //   return call;
-    // }
 
     // 非 write/writeln
     llvm::Function *func = context->module->getFunction(this->name.c_str());  // 找到这个函数
@@ -487,7 +436,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
     for (tree::Exp *arg : this->args) {
         llvm::Value *funcArgValue = static_cast<llvm::Value *>(funcArgs_iter++);
         if (funcArgValue->getType()->isPointerTy()) {  // 如果这个参数是指针（全局变量）
-            if (arg->node_type == N_VARIABLE_EXP) {  // 如果这个参数是变量
+            if (arg->node_type == ND_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
                     static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
                 while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
@@ -495,10 +444,10 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                         ptr, llvm::Twine(""), false, context->getCurBlock());
                 }
                 argValues.push_back(ptr);
-            } else if (arg->node_type == N_BINARY_EXP) {
+            } else if (arg->node_type == ND_BINARY_EXP) {
                 BinaryExp *node = static_cast<BinaryExp *>(arg);
                 if (node->op_code == OP_DOT) {  // 记录类型
-                    if (node->operand2->node_type == N_VARIABLE_EXP) {
+                    if (node->operand2->node_type == ND_VARIABLE_EXP) {
                         VariableExp *op2 = static_cast<VariableExp *>(node->operand2);
                         int index = getRecordIndex(node->operand1->return_type, op2->name);
                         std::vector<llvm::Value *> arrIdx(2);
@@ -520,7 +469,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                         exit(0);
                     }
                 } else if (node->op_code == OP_INDEX) {  // 数组类型
-                    if (node->operand1->node_type == N_VARIABLE_EXP) {
+                    if (node->operand1->node_type == ND_VARIABLE_EXP) {
                         VariableExp *op1 = static_cast<VariableExp *>(node->operand1);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0] =
@@ -878,8 +827,8 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
 }
 
 llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
-    if (this->op_code == OP_DOT) {                          // record
-        if (this->operand2->node_type == N_VARIABLE_EXP) {  // 操作符 2 是变量
+    if (this->op_code == OP_DOT) {                           // record
+        if (this->operand2->node_type == ND_VARIABLE_EXP) {  // 操作符 2 是变量
             tree::VariableExp *op2 = static_cast<tree::VariableExp *>(this->operand2);
             int index = getRecordIndex(  // 找到所求变量在记录中的位置
                 this->operand1->return_type, op2->name);
@@ -897,7 +846,7 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
             exit(0);
         }
     } else if (this->op_code == OP_INDEX) {
-        if (this->operand1->node_type == N_VARIABLE_EXP) {
+        if (this->operand1->node_type == ND_VARIABLE_EXP) {
             tree::VariableExp *op1 = static_cast<tree::VariableExp *>(this->operand1);
             std::vector<llvm::Value *> arrIdx(2);
             arrIdx[0]           = llvm::ConstantInt::get(MyContext, llvm::APInt(32, 0, true));
@@ -1028,7 +977,7 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
     for (tree::Exp *arg : this->args) {
         llvm::Value *funcArgValue = static_cast<llvm::Value *>(funcArgs_iter++);
         if (funcArgValue->getType()->isPointerTy()) {  // 如果这个参数是指针（全局变量）
-            if (arg->node_type == N_VARIABLE_EXP) {  // 如果这个参数是变量
+            if (arg->node_type == ND_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
                     static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
                 while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
@@ -1036,10 +985,10 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
                         ptr, llvm::Twine(""), false, context->getCurBlock());
                 }
                 argValues.push_back(ptr);
-            } else if (arg->node_type == N_BINARY_EXP) {
+            } else if (arg->node_type == ND_BINARY_EXP) {
                 BinaryExp *node = static_cast<BinaryExp *>(arg);
                 if (node->op_code == OP_DOT) {  // 记录类型
-                    if (node->operand2->node_type == N_VARIABLE_EXP) {
+                    if (node->operand2->node_type == ND_VARIABLE_EXP) {
                         VariableExp *op2 = static_cast<VariableExp *>(node->operand2);
                         int index = getRecordIndex(node->operand1->return_type, op2->name);
                         std::vector<llvm::Value *> arrIdx(2);
@@ -1061,7 +1010,7 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
                         exit(0);
                     }
                 } else if (node->op_code == OP_INDEX) {  // 数组类型
-                    if (node->operand1->node_type == N_VARIABLE_EXP) {
+                    if (node->operand1->node_type == ND_VARIABLE_EXP) {
                         VariableExp *op1 = static_cast<VariableExp *>(node->operand1);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0] =

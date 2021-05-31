@@ -45,9 +45,9 @@ build/codegen.o: src/codegen.cpp include/codegen.h
 build/main.o: src/main.cpp include/tree.h include/codegen.h build/parser.cpp
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 
-build/lexer.cpp: src/lexer.l 
+build/lexer.cpp: src/lexer.l
 	flex -o $@ $<
-build/parser.cpp: src/parser.y 
+build/parser.cpp: src/parser.y
 	bison -o $@ -d $<
 
 dirs: build
@@ -60,14 +60,14 @@ clean_tmp:
 	@rm -rf build
 clean_test:
 	@rm -f a.bc* a.tree
-	@rm -f test/*.bc test/*.ll test/*.lli test/*.s test/*.tree
+	@rm -f test/*.bc test/*.ll test/*.lli test/*.s test/*.tree test/*.txt
 
 scan:
 	intercept-build make && analyze-build
 
 test: all
 	for i in $(patsubst %.pas, %, $(wildcard test/*.pas)) ; do \
-		./$(TARGET) $$i.pas ; \
+		./$(TARGET) $$i.pas > $$i\(output\).txt ; \
 		mv a.bc $$i.bc ; \
 		mv a.tree $$i.tree ; \
 		$(LLVM_DIS) -o $$i.ll $$i.bc ;  \

@@ -1029,23 +1029,23 @@ bool VariableExp::checkSemantics() {
     else
         // printf("breakpoint2\n");
         switch (temp->node_type) {
-            case N_CONST_DEF: {
+            case ND_CONST_DEF: {
                 auto *node   = (ConstDef *)temp;
                 is_legal     = true;
                 return_type  = node->value->return_type;
                 return_value = node->value->return_value;
             } break;
-            case N_VAR_DEF: {
+            case ND_VAR_DEF: {
                 auto node   = (VarDef *)temp;
                 is_legal    = true;
                 return_type = node->type;
             } break;
-            case N_ARG_DEF: {
+            case ND_ARG_DEF: {
                 auto *node  = (ArgDef *)temp;
                 is_legal    = true;
                 return_type = node->type;
             } break;
-            case N_FUNCTION_DEF: {
+            case ND_FUNC_DEF: {
                 auto *node = (FunctionDef *)temp;
                 if (node->rtn_type != nullptr) {
                     is_legal    = true;

@@ -6,6 +6,7 @@ const
 
 var 
   i, x : integer;
+
 function go(b : integer): integer;
 begin
   if b = 1 then go := 1
@@ -18,6 +19,7 @@ begin
         end;
     end;
 end;
+
 begin
   x := go(3);
   for i := 0 to 10 do

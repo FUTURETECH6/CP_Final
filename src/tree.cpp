@@ -226,7 +226,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
         str = "NULL";
     else {
         switch (ori_node->node_type) {
-            case N_PROGRAM: {
+            case ND_PROGRAM: {
                 auto *node = (Program *)ori_node;
                 str.append("Program: \n");
                 str.append(print_tab(layer));
@@ -242,7 +242,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->body, layer + 1));
             } break;
 
-            case N_DEFINE: {
+            case ND_DEFINE: {
                 auto *node = (Define *)ori_node;
                 if (node->const_def.size() > 0) {
                     for (auto stm : node->const_def) {
@@ -291,14 +291,14 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 }
             } break;
 
-            case N_BODY: {
+            case ND_BODY: {
                 auto *node = (Body *)ori_node;
                 for (auto stm : node->stms) {
                     str.append(print_rec(stm, layer));
                 }
             } break;
 
-            case N_SITUATION: {
+            case ND_SITUATION: {
                 auto *node = (Situation *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -311,10 +311,9 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->solution, layer + 1));
             } break;
 
-                // case N_LABEL_DEF: {}
-                // break;
+                // case ND_LABEL_DEF: break;
 
-            case N_CONST_DEF: {
+            case ND_CONST_DEF: {
                 auto *node = (ConstDef *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -326,7 +325,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->value, layer + 1, false));
             } break;
 
-            case N_TYPE_DEF: {
+            case ND_TYPE_DEF: {
                 auto *node = (TypeDef *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -338,7 +337,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->type, layer + 1));
             } break;
 
-            case N_VAR_DEF: {
+            case ND_VAR_DEF: {
                 auto *node = (VarDef *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -350,7 +349,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->type, layer + 1));
             } break;
 
-            case N_FUNCTION_DEF: {
+            case ND_FUNC_DEF: {
                 auto *node = (FunctionDef *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -388,7 +387,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->body, layer + 1));
             } break;
 
-            case N_ASSIGN_STM: {
+            case ND_ASSIGN_STM: {
                 auto *node = (AssignStm *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -401,7 +400,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
 
             } break;
 
-            case N_CALL_STM: {
+            case ND_CALL_STM: {
                 auto *node = (CallStm *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -414,7 +413,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                     str.append(print_rec(arg, layer + 1));
             } break;
 
-            case N_CASE_STM: {
+            case ND_CASE_STM: {
                 auto *node = (CaseStm *)ori_node;
                 str.append(print_tab(layer));
                 str.append("switch_item: ");
@@ -427,7 +426,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
 
             } break;
 
-            case N_FOR_STM: {
+            case ND_FOR_STM: {
                 auto *node = (ForStm *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -454,10 +453,9 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->loop, layer + 1));
             } break;
 
-                // case N_GOTO_STM: {}
-                // break;
+                // case ND_GOTO_STM: break;
 
-            case N_IF_STM: {
+            case ND_IF_STM: {
                 auto *node = (IfStm *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -475,12 +473,9 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 }
             } break;
 
-                // case N_LABEL_STM: {
-                //     str.append(print_tab(layer));
-                // }
-                // break;
+            case ND_LABEL_STM: str.append(print_tab(layer)); break;
 
-            case N_REPEAT_STM: {
+            case ND_REPEAT_STM: {
                 auto *node = (RepeatStm *)ori_node;
                 // str.append("\n");
                 str.append(print_tab(layer));
@@ -492,7 +487,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->condition, layer + 1));
             } break;
 
-            case N_WHILE_STM: {
+            case ND_WHILE_STM: {
                 auto *node = (WhileStm *)ori_node;
                 // str.append("\n");
                 str.append(print_tab(layer));
@@ -504,7 +499,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->loop, layer + 1));
             } break;
 
-            case N_BINARY_EXP: {
+            case ND_BINARY_EXP: {
                 auto *node = (BinaryExp *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -524,7 +519,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
 
-            case N_CALL_EXP: {
+            case ND_CALL_EXP: {
                 auto *node = (CallExp *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -541,7 +536,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
 
-            case N_CONSTANT_EXP: {
+            case NX_CONST_EXP: {
                 auto *node = (ConstantExp *)ori_node;
                 str.append("\n");
                 if (noNext == false)
@@ -559,7 +554,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
 
-            case N_UNARY_EXP: {
+            case ND_UNARY_EXP: {
                 auto *node = (UnaryExp *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -575,7 +570,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
 
-            case N_VARIABLE_EXP: {
+            case ND_VARIABLE_EXP: {
                 auto *node = (VariableExp *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -587,7 +582,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
 
-            case N_TYPE: {
+            case ND_TYPE: {
                 auto *node = (Type *)ori_node;
                 switch (node->base_type) {
                     case TY_INTEGER: {
@@ -651,15 +646,15 @@ void tree::printTree(std::string filename, Base *root) {
 
 Type *tree::findType(const std::string &type_name, Base *node) {
     switch (node->node_type) {
-        case N_PROGRAM: return findType(type_name, ((Program *)node)->define);
-        case N_FUNCTION_DEF: {
+        case ND_PROGRAM: return findType(type_name, ((Program *)node)->define);
+        case ND_FUNC_DEF: {
             Type *local = findType(type_name, ((FunctionDef *)node)->define);
             if (local == nullptr)
                 return findType(type_name, node->father);
             else
                 return local;
         }
-        case N_DEFINE: {
+        case ND_DEFINE: {
             Define *d_node = (Define *)node;
             for (TypeDef *iter : d_node->type_def) {
                 Type *result = findType(type_name, iter);
@@ -668,33 +663,33 @@ Type *tree::findType(const std::string &type_name, Base *node) {
             }
             return nullptr;
         }
-        case N_TYPE_DEF: {
+        case ND_TYPE_DEF: {
             TypeDef *td_node = (TypeDef *)node;
             if (td_node->name == type_name)
                 return copyType(td_node->type);
             else
                 return nullptr;
         }
-        case N_BODY:
-        case N_SITUATION:
-        case N_LABEL_DEF:
-        case N_CONST_DEF:
-        case N_VAR_DEF:
-        case N_ASSIGN_STM:
-        case N_CALL_STM:
-        case N_CASE_STM:
-        case N_FOR_STM:
-        case N_GOTO_STM:
-        case N_IF_STM:
-        case N_LABEL_STM:
-        case N_REPEAT_STM:
-        case N_WHILE_STM:
-        case N_BINARY_EXP:
-        case N_CALL_EXP:
-        case N_CONSTANT_EXP:
-        case N_UNARY_EXP:
-        case N_VARIABLE_EXP:
-        case N_TYPE: return findType(type_name, node->father);
+        case ND_BODY:
+        case ND_SITUATION:
+        case ND_LABEL_DEF:
+        case ND_CONST_DEF:
+        case ND_VAR_DEF:
+        case ND_ASSIGN_STM:
+        case ND_CALL_STM:
+        case ND_CASE_STM:
+        case ND_FOR_STM:
+        case ND_GOTO_STM:
+        case ND_IF_STM:
+        case ND_LABEL_STM:
+        case ND_REPEAT_STM:
+        case ND_WHILE_STM:
+        case ND_BINARY_EXP:
+        case ND_CALL_EXP:
+        case NX_CONST_EXP:
+        case ND_UNARY_EXP:
+        case ND_VARIABLE_EXP:
+        case ND_TYPE: return findType(type_name, node->father);
         default: return nullptr;
     }
 }
@@ -736,7 +731,7 @@ bool tree::isSameType(Type *type1, Type *type2) {
 
 Base *tree::findName(const std::string &name, tree::Base *node) {
     switch (node->node_type) {
-        case N_PROGRAM: {
+        case ND_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
             for (ConstDef *iter : d_node->const_def)
                 if (iter->name == name)
@@ -752,7 +747,7 @@ Base *tree::findName(const std::string &name, tree::Base *node) {
                     return iter;
             return nullptr;
         }
-        case N_FUNCTION_DEF: {
+        case ND_FUNC_DEF: {
             auto *f_node = (FunctionDef *)node;
             if (f_node->name == name)
                 return f_node;
@@ -774,70 +769,70 @@ Base *tree::findName(const std::string &name, tree::Base *node) {
                     return iter;
             return findName(name, node->father);
         }
-        case N_BODY:
-        case N_SITUATION:
-        case N_LABEL_DEF:
-        case N_CONST_DEF:
-        case N_TYPE_DEF:
-        case N_VAR_DEF:
-        case N_ASSIGN_STM:
-        case N_CALL_STM:
-        case N_CASE_STM:
-        case N_FOR_STM:
-        case N_GOTO_STM:
-        case N_IF_STM:
-        case N_LABEL_STM:
-        case N_REPEAT_STM:
-        case N_WHILE_STM:
-        case N_BINARY_EXP:
-        case N_CALL_EXP:
-        case N_CONSTANT_EXP:
-        case N_DEFINE:
-        case N_UNARY_EXP:
-        case N_VARIABLE_EXP:
-        case N_TYPE: return findName(name, node->father);
+        case ND_BODY:
+        case ND_SITUATION:
+        case ND_LABEL_DEF:
+        case ND_CONST_DEF:
+        case ND_TYPE_DEF:
+        case ND_VAR_DEF:
+        case ND_ASSIGN_STM:
+        case ND_CALL_STM:
+        case ND_CASE_STM:
+        case ND_FOR_STM:
+        case ND_GOTO_STM:
+        case ND_IF_STM:
+        case ND_LABEL_STM:
+        case ND_REPEAT_STM:
+        case ND_WHILE_STM:
+        case ND_BINARY_EXP:
+        case ND_CALL_EXP:
+        case NX_CONST_EXP:
+        case ND_DEFINE:
+        case ND_UNARY_EXP:
+        case ND_VARIABLE_EXP:
+        case ND_TYPE: return findName(name, node->father);
         default: return nullptr;
     }
 }
 
 bool tree::canFindLabel(const int &label, Base *node) {
     switch (node->node_type) {
-        case N_PROGRAM: {
+        case ND_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
             for (LabelDef *iter : d_node->label_def)
                 if (iter->label_index == label)
                     return true;
             return false;
         }
-        case N_FUNCTION_DEF: {
+        case ND_FUNC_DEF: {
             Define *d_node = ((FunctionDef *)node)->define;
             for (LabelDef *iter : d_node->label_def)
                 if (iter->label_index == label)
                     return true;
             return canFindLabel(label, node->father);
         }
-        case N_BODY:
-        case N_SITUATION:
-        case N_LABEL_DEF:
-        case N_CONST_DEF:
-        case N_TYPE_DEF:
-        case N_VAR_DEF:
-        case N_ASSIGN_STM:
-        case N_CALL_STM:
-        case N_CASE_STM:
-        case N_FOR_STM:
-        case N_GOTO_STM:
-        case N_IF_STM:
-        case N_LABEL_STM:
-        case N_REPEAT_STM:
-        case N_WHILE_STM:
-        case N_BINARY_EXP:
-        case N_CALL_EXP:
-        case N_CONSTANT_EXP:
-        case N_DEFINE:
-        case N_UNARY_EXP:
-        case N_VARIABLE_EXP:
-        case N_TYPE: return canFindLabel(label, node->father);
+        case ND_BODY:
+        case ND_SITUATION:
+        case ND_LABEL_DEF:
+        case ND_CONST_DEF:
+        case ND_TYPE_DEF:
+        case ND_VAR_DEF:
+        case ND_ASSIGN_STM:
+        case ND_CALL_STM:
+        case ND_CASE_STM:
+        case ND_FOR_STM:
+        case ND_GOTO_STM:
+        case ND_IF_STM:
+        case ND_LABEL_STM:
+        case ND_REPEAT_STM:
+        case ND_WHILE_STM:
+        case ND_BINARY_EXP:
+        case ND_CALL_EXP:
+        case NX_CONST_EXP:
+        case ND_DEFINE:
+        case ND_UNARY_EXP:
+        case ND_VARIABLE_EXP:
+        case ND_TYPE: return canFindLabel(label, node->father);
         default: return false;
     }
 }
@@ -846,7 +841,7 @@ ConstDef *tree::findConst(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
-    else if (result->node_type == N_CONST_DEF)
+    else if (result->node_type == ND_CONST_DEF)
         return (ConstDef *)result;
     else
         return nullptr;
@@ -856,9 +851,9 @@ Type *tree::findVar(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
-    else if (result->node_type == N_VAR_DEF)
+    else if (result->node_type == ND_VAR_DEF)
         return ((VarDef *)result)->type;
-    else if (result->node_type == N_ARG_DEF)
+    else if (result->node_type == ND_ARG_DEF)
         return ((ArgDef *)result)->type;
     else
         return nullptr;
@@ -868,7 +863,7 @@ FunctionDef *tree::findFunction(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
-    else if (result->node_type == N_FUNCTION_DEF)
+    else if (result->node_type == ND_FUNC_DEF)
         return (FunctionDef *)result;
     else
         return nullptr;

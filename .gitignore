@@ -2,7 +2,7 @@
 .vscode/*
 bin
 build
-test/*.*
+test/*
 !test/*.pas
 !.vscode/c_cpp_properties.json
 
@@ -11,8 +11,7 @@ test/*.*
 *.o
 *.zip
 
-Tiny-Pascal
 MiniPascal
-bitcode.bin
-a.tree
+*.bc
+*.tree
 compile_commands.json

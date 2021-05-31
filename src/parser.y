@@ -9,7 +9,7 @@ extern "C" int yylex(void);
 extern "C" FILE *yyin;
 
 int currentSymTabSize = 0;
-sym_tab_node symtab[SYM_TAB_LEN];
+symTabNode symtab[SYM_TAB_LEN];
 
 tree::Program *ast_root;
 std::vector<tree::TypeDef *> tmp;

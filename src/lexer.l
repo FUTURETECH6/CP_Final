@@ -121,7 +121,7 @@ comment         (\{.*\}|\(\*.*\*\)|\/\/.*)
 %%
 
 int transform(char *id, unsigned type = -1) {
-    extern sym_tab_node symtab[];
+    extern symTabNode symtab[];
     extern int currentSymTabSize;
 
     // convert to lower case
@@ -141,7 +141,7 @@ int transform(char *id, unsigned type = -1) {
     }
 }
 int search(char *id) {
-    extern sym_tab_node symtab[];
+    extern symTabNode symtab[];
     extern int currentSymTabSize;
 
     // convert to lower case

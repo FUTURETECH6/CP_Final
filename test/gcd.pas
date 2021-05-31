@@ -17,6 +17,6 @@ begin
 end;
 
 begin
-  ans := gcd(9 , 36) * gcd(4 , 12);
-  writeln(ans);
+  writeln(gcd(9 , 36));
+  writeln(gcd(15 , 27));
 end.

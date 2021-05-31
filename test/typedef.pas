@@ -11,6 +11,7 @@ var
   c : ar;
   i : integer;
   j : integer;
+
 begin
   c[0] := 1;
   c[1] := 2;
