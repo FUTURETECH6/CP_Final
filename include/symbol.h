@@ -1,15 +1,9 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef SYMBOL_H
+#define SYMBOL_H
 #include <string>
 
-#define ID_MAX_LEN 50
-#define SYM_TAB_LEN 50
-
-#define INTEGER int
-#define REAL float
-#define CHAR char
-#define BOOLEAN bool
-#define ADDRESS unsigned long
+#define ID_LEN 50
+#define SYMTAB_SIZE 50
 
 enum Op_Type {
     OP_ADD,
@@ -77,7 +71,7 @@ std::string getOpNameByID(int id);
 extern "C" void yyerror(const char *info);
 
 struct symTabNode {
-    char id[ID_MAX_LEN];
+    char id[ID_LEN];
     char type;
 };
 

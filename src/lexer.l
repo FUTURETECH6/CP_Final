@@ -107,7 +107,7 @@ comment         (\{.*\}|\(\*.*\*\)|\/\/.*)
                       return S_CHAR; 
                     }
 {string_const}      {
-                      char string[ID_MAX_LEN];
+                      char string[ID_LEN];
                       strcpy(string, yytext+1);      
                       string[strlen(yytext)-2] = 0;
                       yylval.iVal = transform(string, 4);

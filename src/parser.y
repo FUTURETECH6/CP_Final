@@ -9,7 +9,7 @@ extern "C" int yylex(void);
 extern "C" FILE *yyin;
 
 int currentSymTabSize = 0;
-symTabNode symtab[SYM_TAB_LEN];
+symTabNode symtab[SYMTAB_SIZE];
 
 tree::Program *ast_root;
 std::vector<tree::TypeDef *> tmp;
@@ -41,12 +41,12 @@ std::vector<tree::TypeDef *> tmp;
     Body* body;
     Stm* stm;
     Exp* exp;
-    CallExp* callexp;
+    CallExp* callExp;
     tree::Type* type;
-    TypeDef* tydef;
-    VarDef* vardef;
-    FunctionDef* functiondef;
-    std::vector<string> *str;
+    TypeDef* typeDef;
+    VarDef* varDef;
+    FunctionDef* funcDef;
+    std::vector<string> *strVal;
     std::vector<Exp *> *expVal;
     std::vector<tree::Type *> *tyVal;
     std::vector<LabelDef *> *labelVal;
@@ -65,12 +65,12 @@ std::vector<tree::TypeDef *> tmp;
 %type <body> routine_body compound_stmt stmt_list else_clause stmt non_label_stmt
 %type <stm> assign_stmt proc_stmt if_stmt repeat_stmt while_stmt for_stmt case_stmt goto_stmt sys_proc
 %type <exp> const_value sys_con expression expr term factor
-%type <callexp> sys_funct
+%type <callExp> sys_funct
 %type <type> type_decl simple_type_decl array_type_decl record_type_decl sys_type direction
-%type <tydef> type_definition
-%type <functiondef> function_head procedure_head function_decl procedure_decl parameters para_decl_list para_type_list
+%type <typeDef> type_definition
+%type <funcDef> function_head procedure_head function_decl procedure_decl parameters para_decl_list para_type_list
 %type <expVal> expression_list args_list
-%type <str> name_list var_para_list val_para_list
+%type <strVal> name_list var_para_list val_para_list
 %type <tyVal> field_decl_list field_decl
 %type <labelVal> label_part label_list
 %type <constVal> const_part const_expr_list

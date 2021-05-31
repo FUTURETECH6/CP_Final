@@ -1,5 +1,5 @@
-#ifndef AST_H
-#define AST_H
+#ifndef TREE_H
+#define TREE_H
 #include "symbol.h"
 #include <llvm/IR/Value.h>
 #include <string>
@@ -390,10 +390,10 @@ namespace tree {
       public:
         int base_type;  // 0: int 1: real 2: char 3: boolean 5: array 6: record
         union return_value {
-            INTEGER integer_value;
-            REAL real_value;
-            CHAR char_value;
-            BOOLEAN boolean_value;
+            int integer_value;
+            float real_value;
+            char char_value;
+            bool boolean_value;
             std::string *string_value;
             std::vector<Value *> *children_value;  // a list of the value of children
         } val;

@@ -3,10 +3,6 @@
 
 #include <iostream>
 
-#include "tree.h"
-#include <set>
-#include <stack>
-
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/Bitcode/BitstreamReader.h>
@@ -31,6 +27,8 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <typeinfo>
+
+#include "tree.h"
 
 static llvm::LLVMContext MyContext;
 
