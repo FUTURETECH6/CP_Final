@@ -311,7 +311,7 @@ expression:           expression Token_GE expr              {$$ = new BinaryExp(
                     | expression Token_LE expr              {$$ = new BinaryExp(OP_SMALL_EQUAL, $1, $3);}
                     | expression Token_LT expr              {$$ = new BinaryExp(OP_SMALL, $1, $3);}
                     | expression Token_EQUAL expr           {$$ = new BinaryExp(OP_EQUAL, $1, $3);}
-                    | expression Token_NE expr              {$$ = new BinaryExp(OP_NOToken_EQUAL, $1, $3);}
+                    | expression Token_NE expr              {$$ = new BinaryExp(OP_NOT_EQUAL, $1, $3);}
                     | expr                              {$$ = $1;}
                     ;
 
