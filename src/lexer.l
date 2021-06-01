@@ -106,7 +106,7 @@ comment         (\{.*\}|\(\*.*\*\)|\/\/.*)
                       char CHaR[2];
                       CHaR[0] = yytext[1];
                       CHaR[1] = 0;
-                      yylval.iVal = Conversion(character, 2); 
+                      yylval.iVal = Conversion(CHaR, 2); 
                       return SKET_CHAR; 
                     }
 {string_const}      {
@@ -142,7 +142,7 @@ int Conversion(char *Ident, unsigned type = -1) {
 
     while(i<SymbolTableSizeCur)
     {
-        if((strcmp(Ident, symboltable[i].Identify) == 0){
+        if((strcmp(Ident, symboltable[i].Identify) == 0)){
             result = i;
         }
     }
