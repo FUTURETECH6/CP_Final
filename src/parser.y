@@ -11,7 +11,7 @@ extern "C" FILE *yyin;
 int SymbolTableSizeCur = 0;
 SymbolTableNode symboltable[SYMTAB_SIZE];
 
-tree::Program *ast_root;
+tree::Program *Root_AST;
 std::vector<tree::TypeDef *> tmp;
 %}
 
@@ -35,9 +35,9 @@ std::vector<tree::TypeDef *> tmp;
 %union {
     int iVal;
     Base* tVal;
-    Program* root;
+    Program* Root;
     Define* define;
-    Routine* rout;
+    Routine* RoutineT;
     Body* body;
     Stm* stm;
     Exp* exp;
@@ -60,8 +60,8 @@ std::vector<tree::TypeDef *> tmp;
 
 %token <iVal> SKET_ID SKET_INTEGER SKET_REAL SKET_CHAR SKET_STRING 
 %type <tVal> case_expr
-%type <root> program program_head
-%type <rout> routine sub_routine
+%type <Root> program program_head
+%type <RoutineT> routine sub_routine
 %type <define> routine_head
 %type <body> routine_body compound_stmt stmt_list else_clause stmt non_label_stmt
 %type <stm> assign_stmt proc_stmt if_stmt repeat_stmt while_stmt for_stmt case_stmt goto_stmt sys_proc
@@ -86,7 +86,7 @@ std::vector<tree::TypeDef *> tmp;
 %nonassoc Token_FUNCTION
 
 %%
-program:              program_head routine Token_DOT        {ast_root = $1; ast_root->addRoutine($2);}
+program:              program_head routine Token_DOT        {Root_AST = $1; Root_AST->addRoutine($2);}
                     ;
     
 program_head:         Token_PROGRAM SKET_ID Token_SEMI             {$$ = new Program(symboltable[$2].Identify);}
@@ -154,13 +154,13 @@ sys_type:             Token_CHAR                            {$$ = new Type(TY_CH
 
 simple_type_decl:     sys_type                          {$$ = $1;} // Type
                     | SKET_ID                              {bool flag = false; for(auto tdef : tmp) {if(tdef->name == symboltable[$1].Identify) {$$ = tdef->type; flag = true;}} if(flag==false) yyerror("Semantics Error: Undefined type");} // we define
-                    // | Token_LP name_list Token_RP               {$$ = $2;}
+                    // | Token_LeftP name_list Token_RightP               {$$ = $2;}
                     | const_value Token_DOTDOT const_value  {$$ = new Type(TY_ARRAY); $$->array_start = ((ConstantExp*)$1)->value->val.integer_value; 
                                                                                   $$->array_end = ((ConstantExp*)$3)->value->val.integer_value;
                                                         }
                     ;
 
-array_type_decl:      Token_ARRAY Token_LB simple_type_decl Token_RB Token_OF type_decl         {$$ = $3; $$->child_type.push_back($6);}
+array_type_decl:      Token_ARRAY Token_LeftB simple_type_decl Token_RightB Token_OF type_decl         {$$ = $3; $$->child_type.push_back($6);}
                     ;
 
 record_type_decl:     Token_RECORD field_decl_list Token_END    {$$ = new Type(TY_RECORD); $$->child_type = *$2;} // TODO TY_ROCORD type
@@ -207,7 +207,7 @@ procedure_decl:       procedure_head Token_SEMI sub_routine Token_SEMI          
 procedure_head:       Token_PROCEDURE SKET_ID parameters       {$$ = $3; $$->name = symboltable[$2].Identify;} // TODO
                     ;
 
-parameters:           Token_LP para_decl_list Token_RP          {$$ = $2;}
+parameters:           Token_LeftP para_decl_list Token_RightP          {$$ = $2;}
                     | /* empty */                       {$$ = new FunctionDef("tmp");}
                     ;
 
@@ -253,14 +253,14 @@ non_label_stmt:       assign_stmt                       {$$ = new Body(); $$->ad
                     ;
 
 assign_stmt:          SKET_ID Token_ASSIGN expression          {$$ = new AssignStm(new VariableExp(symboltable[$1].Identify), $3);}
-                    | SKET_ID Token_LB expression Token_RB Token_ASSIGN expression    {$$ = new AssignStm(new BinaryExp(OP_INDEX, new VariableExp(symboltable[$1].Identify), $3), $6);}
+                    | SKET_ID Token_LeftB expression Token_RightB Token_ASSIGN expression    {$$ = new AssignStm(new BinaryExp(OP_INDEX, new VariableExp(symboltable[$1].Identify), $3), $6);}
                     | SKET_ID Token_DOT SKET_ID Token_ASSIGN expression              {$$ = new AssignStm(new BinaryExp(OP_DOT, new VariableExp(symboltable[$1].Identify), new VariableExp(symboltable[$3].Identify)), $5);}
                     ;
 
 proc_stmt:            SKET_ID                              {$$ = new CallStm(symboltable[$1].Identify);}
-                    | SKET_ID Token_LP args_list Token_RP          {$$ = new CallStm(symboltable[$1].Identify); for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);} // TODO
-                    | sys_proc Token_LP expression_list Token_RP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);}
-                    | sys_proc Token_LP factor Token_RP         {$$ = $1; ((CallStm*)$$)->addArgs($3);}
+                    | SKET_ID Token_LeftP args_list Token_RightP          {$$ = new CallStm(symboltable[$1].Identify); for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);} // TODO
+                    | sys_proc Token_LeftP expression_list Token_RightP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);}
+                    | sys_proc Token_LeftP factor Token_RightP         {$$ = $1; ((CallStm*)$$)->addArgs($3);}
                     ;
 
 sys_proc:             Token_WRITE                           {$$ = new CallStm("write");}
@@ -340,14 +340,14 @@ sys_funct:            Token_ABS                             {$$ = new CallExp("T
 
 
 factor:               SKET_ID                              {$$ = new VariableExp(symboltable[$1].Identify);}
-                    | SKET_ID Token_LP args_list Token_RP          {$$ = new CallExp(symboltable[$1].Identify); for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
+                    | SKET_ID Token_LeftP args_list Token_RightP          {$$ = new CallExp(symboltable[$1].Identify); for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
                     | sys_funct                         {$$ = $1;}
-                    | sys_funct Token_LP args_list Token_RP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
+                    | sys_funct Token_LeftP args_list Token_RightP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
                     | const_value                       {$$ = $1;}
-                    | Token_LP expression Token_RP              {$$ = $2;}
+                    | Token_LeftP expression Token_RightP              {$$ = $2;}
                     | Token_NOT factor                      {$$ = new UnaryExp(OP_NOT, $2);}
                     | Token_MINUS factor                    {$$ = new UnaryExp(OP_MINUS, $2);}
-                    | SKET_ID Token_LB expression Token_RB         {$$ = new BinaryExp(OP_INDEX, new VariableExp(symboltable[$1].Identify), $3);}
+                    | SKET_ID Token_LeftB expression Token_RightB         {$$ = new BinaryExp(OP_INDEX, new VariableExp(symboltable[$1].Identify), $3);}
                     | SKET_ID Token_DOT SKET_ID                   {$$ = new BinaryExp(OP_DOT, new VariableExp(symboltable[$1].Identify), new VariableExp(symboltable[$3].Identify));}
                     ;
 
