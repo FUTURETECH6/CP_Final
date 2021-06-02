@@ -124,17 +124,17 @@ bool Define::checkSemantics() {
     // check children
     for (LabelDef *iter : label_def)
         is_legal &= iter->checkSemantics();
-    for (ConstDef *iter : const_def)
+    for (ConstDef *iter : constDef)
         is_legal &= iter->checkSemantics();
     for (TypeDef *iter : type_def)
         is_legal &= iter->checkSemantics();
-    for (VarDef *iter : var_def)
+    for (VarDef *iter : varDef)
         is_legal &= iter->checkSemantics();
-    for (FunctionDef *iter : function_def)
+    for (FunctionDef *iter : funcDef)
         is_legal &= iter->checkSemantics();
     // check between children
     if (is_legal)
-        for (ConstDef *c_iter : const_def) {
+        for (ConstDef *c_iter : constDef) {
             if (is_legal)
                 for (TypeDef *t_iter : type_def)
                     if (c_iter->name == t_iter->name) {
@@ -145,7 +145,7 @@ bool Define::checkSemantics() {
             else
                 break;
             if (is_legal)
-                for (VarDef *v_iter : var_def)
+                for (VarDef *v_iter : varDef)
                     if (c_iter->name == v_iter->name) {
                         is_legal = false;
                         break;
@@ -154,7 +154,7 @@ bool Define::checkSemantics() {
             else
                 break;
             if (is_legal)
-                for (FunctionDef *f_iter : function_def)
+                for (FunctionDef *f_iter : funcDef)
                     if (c_iter->name == f_iter->name) {
                         is_legal = false;
                         break;
@@ -166,7 +166,7 @@ bool Define::checkSemantics() {
     if (is_legal)
         for (TypeDef *t_iter : type_def) {
             if (is_legal)
-                for (VarDef *v_iter : var_def)
+                for (VarDef *v_iter : varDef)
                     if (t_iter->name == v_iter->name) {
                         is_legal = false;
                         break;
@@ -175,7 +175,7 @@ bool Define::checkSemantics() {
             else
                 break;
             if (is_legal)
-                for (FunctionDef *f_iter : function_def)
+                for (FunctionDef *f_iter : funcDef)
                     if (t_iter->name == f_iter->name) {
                         is_legal = false;
                         break;
@@ -185,9 +185,9 @@ bool Define::checkSemantics() {
                 break;
         }
     if (is_legal)
-        for (VarDef *v_iter : var_def) {
+        for (VarDef *v_iter : varDef) {
             if (is_legal)
-                for (FunctionDef *f_iter : function_def)
+                for (FunctionDef *f_iter : funcDef)
                     if (v_iter->name == f_iter->name) {
                         is_legal = false;
                         break;
@@ -268,7 +268,7 @@ bool FunctionDef::checkSemantics() {
                 break;
             }
             if (is_legal)
-                for (ConstDef *iter : define->const_def)
+                for (ConstDef *iter : define->constDef)
                     if (iter->name == arg_name) {
                         is_legal = false;
                         break;
@@ -280,13 +280,13 @@ bool FunctionDef::checkSemantics() {
                         break;
                     }
             if (is_legal)
-                for (VarDef *iter : define->var_def)
+                for (VarDef *iter : define->varDef)
                     if (iter->name == arg_name) {
                         is_legal = false;
                         break;
                     }
             if (is_legal)
-                for (FunctionDef *iter : define->function_def)
+                for (FunctionDef *iter : define->funcDef)
                     if (iter->name == arg_name) {
                         is_legal = false;
                         break;
@@ -294,7 +294,7 @@ bool FunctionDef::checkSemantics() {
         }
     }
     if (is_legal)
-        for (ConstDef *iter : define->const_def)
+        for (ConstDef *iter : define->constDef)
             if (iter->name == name) {
                 is_legal = false;
                 break;
@@ -306,13 +306,13 @@ bool FunctionDef::checkSemantics() {
                 break;
             }
     if (is_legal)
-        for (VarDef *iter : define->var_def)
+        for (VarDef *iter : define->varDef)
             if (iter->name == name) {
                 is_legal = false;
                 break;
             }
     if (is_legal)
-        for (FunctionDef *iter : define->function_def)
+        for (FunctionDef *iter : define->funcDef)
             if (iter->name == name) {
                 is_legal = false;
                 break;

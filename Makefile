@@ -1,4 +1,4 @@
-.PHONY: all clean scan test fmt progs dirs clean_tmp clean_test
+.PHONY: all clean scan test fmt progs dirs clean_tmp clean_test print_output
 
 TARGET = MiniPascal
 
@@ -21,7 +21,7 @@ CXX = $(LLVM_CLANG)
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
-CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE}
+CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -O0
 LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs
@@ -69,9 +69,10 @@ scan:
 
 test: all
 	for i in $(patsubst %.pas, %, $(wildcard test/*.pas)) ; do \
-		./$(TARGET) $$i.pas > $$i\(output\).txt ; \
+		./$(TARGET) $$i.pas > "$$i(debug output).txt" ; \
 		mv a.bc $$i.bc ; \
 		mv a.tree $$i.tree ; \
+		$(LLVM_LLI) $$i.bc > "$$i(lli output).txt" ;  \
 		$(LLVM_DIS) -o $$i.ll $$i.bc ;  \
 		$(LLVM_LLC) -o $$i.s $$i.ll -march=x86-64 ; \
 	done
@@ -80,12 +81,14 @@ fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
 	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}
 
-tmp_cxy_test: fmt clean test
-	@echo
-	@sed -n 168p 'test/fibonacci(output).txt'
-	@echo
-	@sed -n '135,136p' 'test/gcd(output).txt'
-	@echo
-	@sed -n '211,212p' 'test/global_var(output).txt'
-	@echo
-	@sed -n 245p 'test/nested_if(output).txt'
+print_output: fmt clean test
+	@echo "\nfib:"
+	@cat "test/fibonacci(lli output).txt"
+	@echo "\ngcd:"
+	@cat "test/gcd(lli output).txt"
+	@echo "\nglobal_var:"
+	@cat "test/global_var(lli output).txt"
+	@echo "\nnested_if:"
+	@cat "test/nested_if(lli output).txt"
+	@echo "\ntypedef:"
+	@sed -n '1,4p' "test/typedef(lli output).txt"

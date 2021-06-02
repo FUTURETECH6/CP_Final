@@ -2,9 +2,6 @@
 #include <fstream>
 #include <iostream>
 
-// using namespace tree;
-// using namespace std;
-
 // functions for Program
 void tree::Program::DEFINETION_CHANGE_PLUS(Define *define) {
     if (this->define == nullptr) {
@@ -20,7 +17,7 @@ void tree::Define::addLabel(LabelDef *def) {
 
 void tree::Define::addConst(ConstDef *def) {
     def->father = this;
-    const_def.push_back(def);
+    constDef.push_back(def);
 }
 
 void tree::Define::addType(TypeDef *def) {
@@ -30,12 +27,12 @@ void tree::Define::addType(TypeDef *def) {
 
 void tree::Define::addVar(VarDef *def) {
     def->father = this;
-    var_def.push_back(def);
+    varDef.push_back(def);
 }
 
 void tree::Define::addFunction(FunctionDef *def) {
     def->father = this;
-    function_def.push_back(def);
+    funcDef.push_back(def);
 }
 void tree::Program::BODY_CHANGE_PLUS(Body *body) {
     if (this->body == nullptr) {
@@ -247,16 +244,16 @@ tree::Base *tree::findName(const std::string &name, tree::Base *node) {
     switch (node->node_type) {
         case ND_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
-            for (ConstDef *iter : d_node->const_def)
+            for (ConstDef *iter : d_node->constDef)
                 if (iter->name == name)
                     return iter;
             for (TypeDef *iter : d_node->type_def)
                 if (iter->name == name)
                     return iter;
-            for (VarDef *iter : d_node->var_def)
+            for (VarDef *iter : d_node->varDef)
                 if (iter->name == name)
                     return iter;
-            for (FunctionDef *iter : d_node->function_def)
+            for (FunctionDef *iter : d_node->funcDef)
                 if (iter->name == name)
                     return iter;
             return nullptr;
@@ -269,16 +266,16 @@ tree::Base *tree::findName(const std::string &name, tree::Base *node) {
                 if (f_node->args_name[i] == name)
                     return new ArgDef(f_node->args_type[i]);
             Define *d_node = f_node->define;
-            for (ConstDef *iter : d_node->const_def)
+            for (ConstDef *iter : d_node->constDef)
                 if (iter->name == name)
                     return iter;
             for (TypeDef *iter : d_node->type_def)
                 if (iter->name == name)
                     return iter;
-            for (VarDef *iter : d_node->var_def)
+            for (VarDef *iter : d_node->varDef)
                 if (iter->name == name)
                     return iter;
-            for (FunctionDef *iter : d_node->function_def)
+            for (FunctionDef *iter : d_node->funcDef)
                 if (iter->name == name)
                     return iter;
             return findName(name, node->father);

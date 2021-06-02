@@ -38,31 +38,8 @@ std::string print_rec(tree::Value *value, int layer) {
 std::string print_tab(int layer) {
     std::string str;
     for (int i = 0; i < layer; i++)
-        str.append("│    ");
-    str.append("├────");
-    return str;
-}
-
-std::string print_tab1(int layer) {
-    std::string str;
-    for (int i = 0; i < layer; i++)
-        str.append("│    ");
-    str.append("└────");
-    return str;
-}
-
-std::string print_tab2(int layer) {
-    std::string str;
-    for (int i = 0; i < layer - 1; i++)
-        str.append("│    ");
-    str.append("     ├────");
-    return str;
-}
-std::string print_tab3(int layer) {
-    std::string str;
-    for (int i = 0; i < layer - 1; i++)
-        str.append("│    ");
-    str.append("     └────");
+        str.append("|    ");
+    str.append("+----");
     return str;
 }
 
@@ -83,21 +60,21 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("Define: ");
                 str.append(print_rec(node->define, layer + 1));
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("Body: ");
                 str.append(print_rec(node->body, layer + 1));
             } break;
 
             case ND_DEFINE: {
                 auto *node = (tree::Define *)ori_node;
-                if (node->const_def.size() > 0) {
-                    for (auto stm : node->const_def) {
+                if (node->constDef.size() > 0) {
+                    for (auto stm : node->constDef) {
                         str.append("\n");
-                        if (node->type_def.size() > 0 || node->var_def.size() > 0 ||
-                            node->function_def.size() > 0)
+                        if (node->type_def.size() > 0 || node->varDef.size() > 0 ||
+                            node->funcDef.size() > 0)
                             str.append(print_tab(layer));
                         else
-                            str.append(print_tab1(layer));
+                            str.append(print_tab(layer));
                         str.append("const: ");
                         str.append(print_rec(stm, layer + 1));
                     }
@@ -105,34 +82,34 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 if (node->type_def.size() > 0) {
                     for (auto stm : node->type_def) {
                         str.append("\n");
-                        if (node->var_def.size() > 0 || node->function_def.size() > 0)
+                        if (node->varDef.size() > 0 || node->funcDef.size() > 0)
                             str.append(print_tab(layer));
                         else
-                            str.append(print_tab1(layer));
+                            str.append(print_tab(layer));
                         str.append("type: ");
                         str.append(print_rec(stm, layer + 1));
                     }
                 }
-                if (node->var_def.size() > 0) {
-                    for (auto stm : node->var_def) {
+                if (node->varDef.size() > 0) {
+                    for (auto stm : node->varDef) {
                         str.append("\n");
-                        if (node->function_def.size() > 0)
+                        if (node->funcDef.size() > 0)
                             str.append(print_tab(layer));
                         else
-                            str.append(print_tab1(layer));
+                            str.append(print_tab(layer));
                         str.append("var: ");
                         str.append(print_rec(stm, layer + 1));
                     }
                 }
-                if (node->function_def.size() > 0) {
-                    for (int i = 0; i < node->function_def.size(); i++) {
+                if (node->funcDef.size() > 0) {
+                    for (int i = 0; i < node->funcDef.size(); i++) {
                         str.append("\n");
-                        str.append(print_tab1(layer));
+                        str.append(print_tab(layer));
                         str.append("function: ");
-                        if (i != node->function_def.size())
-                            str.append(print_rec(node->function_def[i], layer + 1));
+                        if (i != node->funcDef.size())
+                            str.append(print_rec(node->funcDef[i], layer + 1));
                         else
-                            str.append(print_rec(node->function_def[i], layer + 1, false));
+                            str.append(print_rec(node->funcDef[i], layer + 1, false));
                     }
                 }
             } break;
@@ -166,7 +143,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("const_name: ");
                 str.append(node->name);
                 str.append("\n");
-                str.append(print_tab1(layer));  // modified
+                str.append(print_tab(layer));  // modified
                 str.append("const_value: ");
                 str.append(print_rec(node->value, layer + 1, false));
             } break;
@@ -190,7 +167,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("var_name: ");
                 str.append(node->name);
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("structure: ");
                 str.append(print_rec(node->type, layer + 1));
             } break;
@@ -217,7 +194,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 }
                 if (node->rtn_type != nullptr) {
                     str.append("\n");
-                    str.append(print_tab1(layer));
+                    str.append(print_tab(layer));
                     str.append("return_type: ");
                     str.append(print_rec(node->rtn_type, layer + 1));
                 }
@@ -360,7 +337,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("operand 2: ");
                 str.append(print_rec(node->operand2, layer + 1));
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("return_type: ");
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
@@ -377,7 +354,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 for (auto arg : node->args)
                     str.append(print_rec(arg, layer + 1));
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("return_type: ");
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
@@ -386,16 +363,16 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 auto *node = (tree::ConstantExp *)ori_node;
                 str.append("\n");
                 if (noNext == false)
-                    str.append(print_tab2(layer));
+                    str.append(print_tab(layer));
                 else
                     str.append(print_tab(layer));
                 str.append("const_value: ");
                 str.append(print_rec(node->value, layer + 1));
                 str.append("\n");
                 if (noNext == false)
-                    str.append(print_tab3(layer));
+                    str.append(print_tab(layer));
                 else
-                    str.append(print_tab1(layer));
+                    str.append(print_tab(layer));
                 str.append("return_type: ");
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
@@ -411,7 +388,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("operand: ");
                 str.append(print_rec(node->operand, layer + 1));
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("return_type: ");
                 str.append(print_rec(node->return_type, layer + 1));
             } break;
@@ -423,7 +400,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("var_name: ");
                 str.append(node->name);
                 str.append("\n");
-                str.append(print_tab1(layer));
+                str.append(print_tab(layer));
                 str.append("return_type: ");
                 str.append(print_rec(node->return_type, layer + 1));
             } break;

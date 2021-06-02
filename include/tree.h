@@ -100,11 +100,11 @@ namespace tree {
 
     class Define : public Base {
       public:
-        std::vector<LabelDef *> label_def;        // can be empty
-        std::vector<ConstDef *> const_def;        // can be empty
-        std::vector<TypeDef *> type_def;          // can be empty
-        std::vector<VarDef *> var_def;            // can be empty
-        std::vector<FunctionDef *> function_def;  // can be empty
+        std::vector<LabelDef *> label_def;   // can be empty
+        std::vector<ConstDef *> constDef;    // can be empty
+        std::vector<TypeDef *> type_def;     // can be empty
+        std::vector<VarDef *> varDef;        // can be empty
+        std::vector<FunctionDef *> funcDef;  // can be empty
         Define(std::vector<LabelDef *> _label_def, std::vector<ConstDef *> _const_def,
             std::vector<TypeDef *> _type_def, std::vector<VarDef *> _var_def,
             std::vector<FunctionDef *> _function_def)

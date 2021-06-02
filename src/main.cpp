@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
     llvm::InitializeNativeTarget();
     CodeGenContext context;
 
-    context.generateCode(*ast_root);
+    context.generateCode(*ast_root, "a.bc");
 
-    context.runCode();
+    // context.runCode();
     return 0;
 }

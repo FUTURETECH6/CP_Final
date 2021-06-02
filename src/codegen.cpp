@@ -3,16 +3,48 @@
 
 #include "codegen.h"
 
+/* Class Defination */
+
+/**
+ * @brief
+ *
+ * @param name
+ * @return llvm::Value*
+ */
+llvm::Value *CodeGenContext::getValue(std::string name) {
+    std::cout << "Start get value for `" << name << "`" << std::endl;
+
+    llvm::Value *ret;
+    if ((ret = this->funcCur->getValueSymbolTable()->lookup(name)) !=
+        nullptr) {  // 在 curFunc 的局部变量中找到
+        std::cout << "[Success] Found local variable: " << name << std::endl;
+        return ret;
+    } else if ((ret = this->pModule->getGlobalVariable(name)) !=
+               nullptr) {  // 在 module 的全局变量中找到
+        std::cout << "[Success] Found global variable: " << name << std::endl;
+        return ret;
+    } else {  // Not found
+        std::cerr << "[Error] Undeclared variable: " << name << std::endl;
+        exit(0);
+    }
+}
+
+/**
+ * @brief
+ *
+ * @param type
+ * @return llvm::Type*
+ */
 llvm::Type *CodeGenContext::getLlvmType(tree::Type *type) {
     if (type == nullptr) {
-        return llvm::Type::getVoidTy(MyContext);
+        return llvm::Type::getVoidTy(globalContext);
     }
 
     switch (type->baseType) {
-        case TY_INTEGER: return llvm::Type::getInt32Ty(MyContext);
-        case TY_REAL: return llvm::Type::getFloatTy(MyContext);
-        case TY_CHAR: return llvm::Type::getInt8Ty(MyContext);
-        case TY_BOOLEAN: return llvm::Type::getInt1Ty(MyContext);
+        case TY_INTEGER: return llvm::Type::getInt32Ty(globalContext);
+        case TY_REAL: return llvm::Type::getFloatTy(globalContext);
+        case TY_CHAR: return llvm::Type::getInt8Ty(globalContext);
+        case TY_BOOLEAN: return llvm::Type::getInt1Ty(globalContext);
 
         case TY_ARRAY:
             return llvm::ArrayType::get(this->getLlvmType(type->childType[0]),
@@ -23,7 +55,7 @@ llvm::Type *CodeGenContext::getLlvmType(tree::Type *type) {
             for (tree::Type *child : type->childType) {
                 members.push_back(this->getLlvmType(child));
             }
-            llvm::StructType *const rcd = llvm::StructType::create(MyContext,
+            llvm::StructType *const rcd = llvm::StructType::create(globalContext,
                 type->name);  // StringRef Name
             rcd->setBody(members);
             return rcd;
@@ -41,20 +73,65 @@ llvm::Type *CodeGenContext::getLlvmType(tree::Type *type) {
     }
 }
 
-//--------------------------------------------------------------
+void CodeGenContext::generateCode(tree::Program &root, std::string file) {
+    std::cout << "Generating code...\n";
+
+    std::vector<llvm::Type *> argTypeVec;  // 对于一个函数，llvm需要一个参数类型表
+    // 构造一个main函数的函数类型，返回值为void，定长参数
+    llvm::FunctionType *funcType = llvm::FunctionType::get(
+        llvm::Type::getVoidTy(globalContext),  // Type *Result: 返回值类型
+        llvm::makeArrayRef(argTypeVec),        // ArrayRef<Type *> Params: 参数列表
+        false);                                // bool isVarArg: 是否为变长参数
+    // 利用构造的main函数函数类型，构造一个main函数
+    this->funcMain = llvm::Function::Create(funcType,  // FunctionType *Ty: 函数类型
+        llvm::GlobalValue::InternalLinkage,            // LinkageTypes Linkage
+        llvm::Twine("main"),                           // const Twine &N
+        this->pModule);                                // Module *M
+    // 主程序入口（main）
+    llvm::BasicBlock *basBlock =
+        llvm::BasicBlock::Create(globalContext,  // LLVMContext &Context
+            llvm::Twine("entry"),                // const Twine &Name
+            this->funcMain,                      // Function *Parent
+            nullptr);                            // BasicBlock *InsertBefore
+
+    this->printf = createPrintf(this);
+
+    this->pushBlock(basBlock);  // push entry of program(main)
+    this->funcCur = this->funcMain;
+    root.codeGen(this);
+    llvm::ReturnInst::Create(globalContext,  // LLVMContext &Context
+        this->getCurBlk());                  // BasicBlock *InsertAtEnd
+    this->popBlock();                        // 出栈
+
+    std::cout << "Code is generated.\n";
+
+    // generate module pass
+    llvm::legacy::PassManager passMgr;
+    passMgr.add(llvm::createPrintModulePass(llvm::outs()));
+    passMgr.run(*this->pModule);
+
+    // generate .bc
+    std::error_code errCode;
+    llvm::raw_fd_ostream os(file, errCode, llvm::sys::fs::F_None);
+    llvm::WriteBitcodeToFile(*this->pModule, os);
+    os.flush();
+}
+
+/* Public Method */
 
 llvm::Function *createPrintf(CodeGenContext *context) {
     std::vector<llvm::Type *> argTypes;
-    argTypes.push_back(llvm::Type::getInt8PtrTy(MyContext));  // push 第一个参数的类型 char *
+    argTypes.push_back(
+        llvm::Type::getInt8PtrTy(globalContext));  // push 第一个参数的类型 char *
     llvm::FunctionType *printType = llvm::FunctionType::get(  // 构造函数类型
-        llvm::Type::getInt32Ty(MyContext),                    // Type *Result 			// 返回 int
+        llvm::Type::getInt32Ty(globalContext),                // Type *Result 			// 返回 int
         llvm::makeArrayRef(argTypes),  // ArrayRef<Type *> Params  // 参数表
         true);                         // bool isVarArg            // 是否为变长参数
     llvm::Function *func = llvm::Function::Create(  // 根据函数类型构造函数体
         printType,                                  // FunctionType *Ty      // 函数类型
         llvm::Function::ExternalLinkage,  // LinkageTypes Linkage  // 定义外部链接
         llvm::Twine("printf"),            // const Twine &N        // 函数名称
-        context->module);                 // Module *M             // 装载的 module
+        context->pModule);                // Module *M             // 装载的 module
     func->setCallingConv(llvm::CallingConv::C);  // 设置调用常数
     return func;
 }
@@ -67,7 +144,7 @@ int getRecordIndex(
             return i;
         }
     }
-    std::cout << "[Error] Unknown name: " << name << " (in record: " << recType->name << ")"
+    std::cout << "[Error] Unknown name: `" << name << "` (in record: " << recType->name << ")"
               << std::endl;
     exit(0);
 }
@@ -81,7 +158,7 @@ llvm::Value *getArrRef(
         ND_VARIABLE_EXP) {  // 如果二元表达式第一个参数是变量表达式
         std::vector<llvm::Value *> arrIdx(2);
         arrIdx[0] = llvm::ConstantInt::get(
-            MyContext, llvm::APInt(32, 0, true));  // 构建 llvm 整型常数，值为 0
+            globalContext, llvm::APInt(32, 0, true));  // 构建 llvm 整型常数，值为 0
         arrIdx[1] = exp->operand2->codeGen(context);  //  获取二元表达式的第二个变量的值
 
         return llvm::GetElementPtrInst::CreateInBounds(
@@ -89,17 +166,17 @@ llvm::Value *getArrRef(
                 arrName),  // Value *Ptr                // 从 context 中找到数组变量
             llvm::ArrayRef<llvm::Value *>(arrIdx),  // ArrayRef<Value *> IdxList
             llvm::Twine("tempname"),                // const Twine &NameStr
-            context->getCurBlock());                // BasicBlock *InsertAtEnd
+            context->getCurBlk());                  // BasicBlock *InsertAtEnd
     } else {
         std::cout << "[Error] Wrong array type: " << arrName << std::endl;
         exit(0);
     }
 }
 
-/* ================== code generate =================== */
+/* Code Generation of tree node */
 
 llvm::Value *tree::Body::codeGen(CodeGenContext *context) {
-    for (tree::Stm *stm : this->stms) {
+    for (tree::Stm *&stm : this->stms) {
         stm->codeGen(context);
         std::cout << "[Success] A statment generated" << std::endl;
     }
@@ -110,27 +187,25 @@ llvm::Value *tree::Program::codeGen(CodeGenContext *context) {
     llvm::Value *lastDef = nullptr;
 
     if (this->define != nullptr) {
-        for (tree::ConstDef *conDef : this->define->const_def) {  // 全局常量定义
-            lastDef = conDef->codeGen(context);
-            std::cout << "[Success] Program defined a const: " << conDef->name << std::endl;
+        for (tree::ConstDef *&constDef : this->define->constDef) {
+            std::cout << "[Success] Program defined a const: " << constDef->name << std::endl;
+            lastDef = constDef->codeGen(context);
         }
-
-        for (tree::VarDef *varDef : this->define->var_def) {
-            varDef->is_global = true;
-            lastDef           = varDef->codeGen(context);
+        for (tree::VarDef *&varDef : this->define->varDef) {
             std::cout << "[Success] Program defined a gloable variable: " << varDef->name
                       << std::endl;
+            varDef->is_global = true;
+            lastDef           = varDef->codeGen(context);
         }
-
-        for (tree::FunctionDef *funDef : this->define->function_def) {
-            lastDef = funDef->codeGen(context);
-            std::cout << "[Success] Program defined a function: " << funDef->name
+        for (tree::FunctionDef *&funcDef : this->define->funcDef) {
+            std::cout << "[Success] Program defined a function: " << funcDef->name
                       << std::endl;
+            lastDef = funcDef->codeGen(context);
         }
     }
 
-    this->body->codeGen(context);
     std::cout << "[Success] Program generated" << std::endl;
+    this->body->codeGen(context);
 
     return lastDef;
 }
@@ -155,12 +230,12 @@ llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
             context->getLlvmType(opLeft->return_type),  // Type *Ty                 // 类型
             0,                                          // unsigned AddrSpace
             llvm::Twine(this->name),  // const Twine &Name        // 常量名称
-            context->getCurBlock());  // BasicBlock *InsertAtEnd
+            context->getCurBlk());    // BasicBlock *InsertAtEnd
         llvm::Value *store        = new llvm::StoreInst(  // 将常量的值赋到空间中
             opLeft->codeGen(context),  // Value *Val              // 常量的值
             alloc,                     // Value *Ptr              // 常量的地址
             false,                     // bool isVolatile         // 不可更改
-            context->getCurBlock());   // BasicBlock InsertAtEnd
+            context->getCurBlk());     // BasicBlock InsertAtEnd
 
         context->insertConst(this->name, this->value);  // 添加常量到上下文中
         std::cout << "[Success] Const defined: " << this->name << std::endl;
@@ -190,19 +265,20 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
             llvm::Constant *eleOfArr;
             switch (this->type->childType[0]->baseType) {  // 对全局变量进行初始化
                 case TY_INTEGER:
-                    eleOfArr =
-                        llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true);
+                    eleOfArr = llvm::ConstantInt::get(
+                        llvm::Type::getInt32Ty(globalContext), 0, true);
                     break;
                 case TY_REAL:
-                    eleOfArr = llvm::ConstantFP ::get(llvm::Type::getFloatTy(MyContext), 0);
+                    eleOfArr =
+                        llvm::ConstantFP ::get(llvm::Type::getFloatTy(globalContext), 0);
                     break;
                 case TY_CHAR:
                     eleOfArr =
-                        llvm::ConstantInt::get(llvm::Type::getInt8Ty(MyContext), 0, true);
+                        llvm::ConstantInt::get(llvm::Type::getInt8Ty(globalContext), 0, true);
                     break;
                 case TY_BOOLEAN:
                     eleOfArr =
-                        llvm::ConstantInt::get(llvm::Type::getInt1Ty(MyContext), 0, true);
+                        llvm::ConstantInt::get(llvm::Type::getInt1Ty(globalContext), 0, true);
                     break;
                 default:
                     std::cout << "[Warning] Uncomplete feature for global array of record"
@@ -217,7 +293,7 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
             llvm::ArrayType *arrType =
                 static_cast<llvm::ArrayType *>(context->getLlvmType(this->type));
             llvm::Constant *arrConst = llvm::ConstantArray::get(arrType, vec);
-            alloc = new llvm::GlobalVariable(*context->module,  // Module &M
+            alloc = new llvm::GlobalVariable(*context->pModule,  // Module &M
                 context->getLlvmType(this->type),  // Type *Ty               // 全局变量的类型
                 false,                             // bool isConstant        // 是否常量
                 llvm::GlobalValue::ExternalLinkage,  // LinkageTypes Linkage
@@ -230,24 +306,25 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
             llvm::Constant *arrConst;
             switch (this->type->baseType) {
                 case TY_INTEGER:
-                    arrConst =
-                        llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true);
+                    arrConst = llvm::ConstantInt::get(
+                        llvm::Type::getInt32Ty(globalContext), 0, true);
                     break;
                 case TY_REAL:
-                    arrConst = llvm::ConstantFP ::get(llvm::Type::getFloatTy(MyContext), 0);
+                    arrConst =
+                        llvm::ConstantFP ::get(llvm::Type::getFloatTy(globalContext), 0);
                     break;
                 case TY_CHAR:
                     arrConst =
-                        llvm::ConstantInt::get(llvm::Type::getInt8Ty(MyContext), 0, true);
+                        llvm::ConstantInt::get(llvm::Type::getInt8Ty(globalContext), 0, true);
                     break;
                 case TY_BOOLEAN:
                     arrConst =
-                        llvm::ConstantInt::get(llvm::Type::getInt1Ty(MyContext), 0, true);
+                        llvm::ConstantInt::get(llvm::Type::getInt1Ty(globalContext), 0, true);
                     break;
                 default:;
             }
 
-            alloc = new llvm::GlobalVariable(*context->module,
+            alloc = new llvm::GlobalVariable(*context->pModule,
                 context->getLlvmType(this->type), false, llvm::GlobalValue::ExternalLinkage,
                 arrConst, llvm::Twine(this->name));
         }
@@ -256,7 +333,7 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
             context->getLlvmType(this->type),  // 类型
             0,
             llvm::Twine(this->name),  // 常量名称
-            context->getCurBlock());
+            context->getCurBlk());
     }
     std::cout << "[Success] Variable defined: " << this->name << std::endl;
     return alloc;
@@ -269,7 +346,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     std::vector<llvm::Type *> argTy;
     for (int i = 0; i < this->args_type.size(); i++) {
         if (this->args_is_formal_parameters[i]) {  // 参数传递 引用/值
-            argTy.push_back(llvm::Type::getInt32PtrTy(MyContext));
+            argTy.push_back(llvm::Type::getInt32PtrTy(globalContext));
         } else {
             argTy.push_back(context->getLlvmType(this->args_type[i]));
         }
@@ -282,14 +359,15 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     llvm::Function *func =
         llvm::Function::Create(funcType, llvm::GlobalValue::InternalLinkage,
             llvm::Twine(this->name),  // 函数名
-            context->module);
+            context->pModule);
 
-    llvm::BasicBlock *block = llvm::BasicBlock::Create(MyContext, llvm::Twine("entry"), func,
-        nullptr);  // BasicBlock *InsertBefore
+    llvm::BasicBlock *block =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("entry"), func,
+            nullptr);  // BasicBlock *InsertBefore
 
     llvm::Function *oldFunc = context->getCurFunc();
     context->setCurFunc(func);
-    llvm::BasicBlock *oldBlock = context->getCurBlock();
+    llvm::BasicBlock *oldBlock = context->getCurBlk();
     context->parentMap[func]   = oldFunc;
 
     context->pushBlock(block);
@@ -299,7 +377,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     for (int i = 0; i < argTy.size(); i++) {
         llvm::Type *ty;
         if (this->args_is_formal_parameters[i]) {
-            ty = llvm::Type::getInt32PtrTy(MyContext);
+            ty = llvm::Type::getInt32PtrTy(globalContext);
             std::cout << "|--- Formal argument define: " << this->args_name[i] << std::endl;
         } else {
             ty = context->getLlvmType(this->args_type[i]);
@@ -309,7 +387,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
             ty,                                     // 参数类型
             0,
             llvm::Twine(this->args_name[i]),  // 参数名
-            context->getCurBlock());
+            context->getCurBlk());
         argValue           = argValue_iter++;
         argValue->setName(llvm::Twine(this->args_name[i]));
         new llvm::StoreInst(  // 存参数值
@@ -322,7 +400,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     if (this->rtn_type != nullptr) {
         new llvm::AllocaInst(  // 为返回值分配地址
             context->getLlvmType(this->rtn_type), 0, llvm::Twine(this->name),
-            context->getCurBlock());
+            context->getCurBlk());
         std::cout << "|--- Function return value declaration" << std::endl;
     }
 
@@ -330,11 +408,11 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
 
     if (this->define != nullptr) {
         std::cout << "|--- Function variable define" << std::endl;
-        for (tree::VarDef *var_d : this->define->var_def) {
+        for (tree::VarDef *var_d : this->define->varDef) {
             var_d->codeGen(context);
         }
 
-        for (tree::FunctionDef *func_d : this->define->function_def) {
+        for (tree::FunctionDef *func_d : this->define->funcDef) {
             func_d->codeGen(context);
         }
 
@@ -346,16 +424,16 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     if (this->rtn_type != nullptr) {
         std::cout << "|--- Generating return value for function" << std::endl;
         llvm::Value *load = new llvm::LoadInst(  // 加载返回值的地址
-            context->getValue(this->name), llvm::Twine(""), false, context->getCurBlock());
-        llvm::ReturnInst::Create(MyContext, load, context->getCurBlock());
+            context->getValue(this->name), llvm::Twine(""), false, context->getCurBlk());
+        llvm::ReturnInst::Create(globalContext, load, context->getCurBlk());
         std::cout << "|--- Function returned" << std::endl;
     } else {
         std::cout << "|--- Generating return void for procedure" << std::endl;
-        llvm::ReturnInst::Create(MyContext, context->getCurBlock());
+        llvm::ReturnInst::Create(globalContext, context->getCurBlk());
         std::cout << "|--- Procedure returned" << std::endl;
     }
 
-    while (context->getCurBlock() != oldBlock) {  // 函数定义完成
+    while (context->getCurBlk() != oldBlock) {  // 函数定义完成
         context->popBlock();
     }
     context->setCurFunc(oldFunc);
@@ -374,7 +452,7 @@ llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
             std::cout << "[Success] Assignment statment generate" << std::endl;
             return new llvm::StoreInst(this->right_value->codeGen(context),  // 值
                 elementPtr,                                                  // 地址
-                false, context->getCurBlock());
+                false, context->getCurBlk());
         } else if (op1->op_code == OP_DOT) {
             // TODO
         } else {
@@ -391,12 +469,12 @@ llvm::Value *tree::AssignStm::codeGen(CodeGenContext *context) {
             llvm::Value *load;
             do {
                 load = tmp;
-                tmp = new llvm::LoadInst(tmp, llvm::Twine(""), false, context->getCurBlock());
+                tmp  = new llvm::LoadInst(tmp, llvm::Twine(""), false, context->getCurBlk());
             } while (tmp->getType()->isPointerTy());
 
             return new llvm::StoreInst(this->right_value->codeGen(context),  // 值（右）
                 load,  // 地址（左）
-                false, context->getCurBlock());
+                false, context->getCurBlk());
         }
     } else {  // 如果左值不为变量/二元表达式
         std::cout << "[Error] Wrong left value type" << std::endl;
@@ -414,7 +492,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
 
         for (tree::Exp *arg : this->args) {
             llvm::Value *argValue = arg->codeGen(context);  // 得到参数的值
-            if (argValue->getType() == llvm::Type::getInt32Ty(MyContext)) {
+            if (argValue->getType() == llvm::Type::getInt32Ty(globalContext)) {
                 printf_format += "%d";
                 std::cout << "|--- System call write variable previous name"
                           << argValue->getName().str() << std::endl;
@@ -422,7 +500,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
             } else if (argValue->getType()->isFloatTy()) {
                 printf_format += "%f";
                 printfArgs.push_back(argValue);
-            } else if (argValue->getType() == llvm::Type::getInt8PtrTy(MyContext)) {
+            } else if (argValue->getType() == llvm::Type::getInt8PtrTy(globalContext)) {
                 std::cout << "[Warning] string print is not supported" << std::endl;
                 exit(0);
             } else {
@@ -437,35 +515,35 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
         std::cout << "print format: " << printf_format << std::endl;
         llvm::Constant *printf_format_const =
             llvm::ConstantDataArray::getString(  // 创建常量 char*
-                MyContext, printf_format.c_str());
+                globalContext, printf_format.c_str());
         llvm::GlobalVariable *format_string_var =
             new llvm::GlobalVariable(  // 创建一个全局变量
-                *context->module,
+                *context->pModule,
                 llvm::ArrayType::get(  // 变量类型 char*
-                    llvm::IntegerType::getInt8Ty(MyContext),
+                    llvm::IntegerType::getInt8Ty(globalContext),
                     strlen(printf_format.c_str()) + 1),
                 true,  // 常量
                 llvm::GlobalValue::PrivateLinkage,
                 printf_format_const,  // 变量的值
                 llvm::Twine(".str"));
         llvm::Constant *zero = llvm::Constant::getNullValue(  // 创建一个 0
-            llvm::IntegerType::getInt32Ty(MyContext));
+            llvm::IntegerType::getInt32Ty(globalContext));
         std::vector<llvm::Constant *> arrIdx;
         arrIdx.push_back(zero);
         arrIdx.push_back(zero);
         llvm::Constant *var_ref = llvm::ConstantExpr::getGetElementPtr(
-            llvm::ArrayType::get(
-                llvm::IntegerType::getInt8Ty(MyContext), strlen(printf_format.c_str()) + 1),
+            llvm::ArrayType::get(llvm::IntegerType::getInt8Ty(globalContext),
+                strlen(printf_format.c_str()) + 1),
             format_string_var,  // 全局变量
             arrIdx);            // 从 0 开始
         printfArgs.insert(printfArgs.begin(), var_ref);
         std::cout << "[Success] Print call generated" << std::endl;
         return llvm::CallInst::Create(context->printf, llvm::makeArrayRef(printfArgs),
-            llvm::Twine(""), context->getCurBlock());
+            llvm::Twine(""), context->getCurBlk());
     }
 
     // 非 write/writeln
-    llvm::Function *func = context->module->getFunction(this->name.c_str());  // 找到这个函数
+    llvm::Function *func = context->pModule->getFunction(this->name.c_str());  // 找到这个函数
     if (func == nullptr) {
         std::cout << "[Error] Function not defined" << std::endl;
         exit(0);
@@ -478,9 +556,9 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
             if (arg->node_type == ND_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
                     static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
-                while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
-                    ptr = new llvm::LoadInst(
-                        ptr, llvm::Twine(""), false, context->getCurBlock());
+                while (ptr->getType() != llvm::Type::getInt32PtrTy(globalContext)) {
+                    ptr =
+                        new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlk());
                 }
                 argValues.push_back(ptr);
             } else if (arg->node_type == ND_BINARY_EXP) {
@@ -491,15 +569,15 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                         int index = getRecordIndex(node->operand1->return_type, op2->name);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0]        = llvm::ConstantInt::get(  // 0
-                            MyContext, llvm::APInt(32, 0, true));
+                            globalContext, llvm::APInt(32, 0, true));
                         arrIdx[1]        = llvm::ConstantInt::get(  // index
-                            MyContext, llvm::APInt(32, index, true));
+                            globalContext, llvm::APInt(32, index, true));
                         llvm::Value *ptr = llvm::GetElementPtrInst::Create(
                             context->getLlvmType(node->operand1->return_type),  // 类型
                             context->getValue(op2->name),                       // 值
                             arrIdx,           // 记录所存在的序号
                             llvm::Twine(""),  // 名称
-                            context->getCurBlock());
+                            context->getCurBlk());
                         argValues.push_back(ptr);
                     } else {
                         std::cout
@@ -512,12 +590,12 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                         VariableExp *op1 = static_cast<VariableExp *>(node->operand1);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0] =
-                            llvm::ConstantInt::get(MyContext, llvm::APInt(32, 0, true));
+                            llvm::ConstantInt::get(globalContext, llvm::APInt(32, 0, true));
                         arrIdx[1]        = node->operand2->codeGen(context);
                         llvm::Value *ptr = llvm::GetElementPtrInst::CreateInBounds(
                             context->getValue(op1->name),
                             llvm::ArrayRef<llvm::Value *>(arrIdx), llvm::Twine("tempname"),
-                            context->getCurBlock());
+                            context->getCurBlk());
                         argValues.push_back(ptr);
                     } else {
                         std::cout << "[Error] Array's Ref is not an array type variable"
@@ -535,7 +613,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
 
     std::cout << "[Success] Function called." << std::endl;
     return llvm::CallInst::Create(
-        func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlock());
+        func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlk());
 }
 
 llvm::Value *tree::LabelStm::codeGen(CodeGenContext *context) {
@@ -547,22 +625,22 @@ llvm::Value *tree::IfStm::codeGen(CodeGenContext *context) {
     llvm::Value *cond = condition->codeGen(context);
     std::cout << "|--- [Success] Condition generated" << std::endl;
     llvm::BasicBlock *trueBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("then"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("then"), context->getCurFunc());
     llvm::BasicBlock *falseBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("else"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("else"), context->getCurFunc());
     llvm::BasicBlock *mergeBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("merge"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("merge"), context->getCurFunc());
 
     llvm::Value *ret = llvm::BranchInst::Create(trueBlock,  // BasicBlock *True
         falseBlock,                                         // BasicBlock *False
         cond,                                               // Value *cond
-        context->getCurBlock());                            // BasicBlock *InsertAtEnd
+        context->getCurBlk());                              // BasicBlock *InsertAtEnd
 
     context->pushBlock(trueBlock);
     this->true_do->codeGen(context);
     std::cout << "|--- [Success] True block generated" << std::endl;
     llvm::BranchInst::Create(  // 为真的语句生成完成，回到 merge
-        mergeBlock, context->getCurBlock());
+        mergeBlock, context->getCurBlk());
     context->popBlock();
     context->pushBlock(falseBlock);
     if (this->false_do != nullptr) {
@@ -570,7 +648,7 @@ llvm::Value *tree::IfStm::codeGen(CodeGenContext *context) {
         std::cout << "|--- [Success] False block generated" << std::endl;
     }
     llvm::BranchInst::Create(  // 为假的语句生成完成，回到 merge
-        mergeBlock, context->getCurBlock());
+        mergeBlock, context->getCurBlk());
     context->popBlock();
     context->pushBlock(mergeBlock);
     std::cout << "[Success] If statment generated" << std::endl;
@@ -580,7 +658,7 @@ llvm::Value *tree::IfStm::codeGen(CodeGenContext *context) {
 llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating case statment" << std::endl;
     llvm::BasicBlock *exitBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->getCurFunc());
     std::vector<llvm::BasicBlock *> blocks;
     std::cout << "|--- Contains :" << situations.size() << "cases" << std::endl;
 
@@ -588,7 +666,7 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
     for (int i = 0; i < this->situations.size(); i++) {
         for (int j = 0; j < this->situations[i]->match_list.size(); j++) {
             llvm::BasicBlock *basBlock = llvm::BasicBlock::Create(
-                MyContext, llvm::Twine("case"), context->getCurFunc());
+                globalContext, llvm::Twine("case"), context->getCurFunc());
 
             std::cout << "|--- In case " << i << ":" << j << std::endl;
             tree::BinaryExp *cond = new tree::BinaryExp(
@@ -599,16 +677,16 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
                 ret = llvm::BranchInst::Create(  // 最后一块连接到 exitBlock
                     basBlock,                    // BasicBlock *IfTrue
                     exitBlock,  // BasicBlock *IfFalse      // 不符合条件，退出
-                    cond->codeGen(context),   // Value Cond
-                    context->getCurBlock());  // BasicBlock *InsertAtEnd
+                    cond->codeGen(context),  // Value Cond
+                    context->getCurBlk());   // BasicBlock *InsertAtEnd
             } else {
                 llvm::BasicBlock *nextBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("next"), context->getCurFunc());
+                    globalContext, llvm::Twine("next"), context->getCurFunc());
                 llvm::BranchInst::Create(
                     basBlock,   // BasicBlock *IfTrue       // 符合条件，这个
                     nextBlock,  // BasicBlock *IfFalse      // 不符合条件，下一个
-                    cond->codeGen(context),   // Value Cond
-                    context->getCurBlock());  // BasicBlock *InsertAtEnd
+                    cond->codeGen(context),  // Value Cond
+                    context->getCurBlk());   // BasicBlock *InsertAtEnd
                 context->pushBlock(nextBlock);
             }
         }
@@ -618,7 +696,7 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
         for (int j = 0; j < this->situations[i]->match_list.size();
              j++) {  // 每一种 situation 中的每一个 match
             llvm::BasicBlock *basBlock = llvm::BasicBlock::Create(
-                MyContext, llvm::Twine("caseStmt"), context->getCurFunc());
+                globalContext, llvm::Twine("caseStmt"), context->getCurFunc());
             blocks.push_back(basBlock);  // 建立一个 block 并 push
         }
     }
@@ -637,15 +715,15 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
                 ret = llvm::BranchInst::Create(blocks[p],  // BasicBlock *IfTrue
                     exitBlock,                             // BasicBlock *IfFalse
                     cond->codeGen(context),                // Value Cond
-                    context->getCurBlock());               // BasicBlock *InsertAtEnd
+                    context->getCurBlk());                 // BasicBlock *InsertAtEnd
             } else {
                 nextBlock =
-                    llvm::BasicBlock::Create(MyContext, "next", context->getCurFunc());
+                    llvm::BasicBlock::Create(globalContext, "next", context->getCurFunc());
 
                 llvm::BranchInst::Create(blocks[p],  // BasicBlock *IfTrue
                     nextBlock,                       // BasicBlock *IfFalse
                     cond->codeGen(context),          // Value Cond
-                    context->getCurBlock());         // BasicBlock *InsertAtEnd
+                    context->getCurBlk());           // BasicBlock *InsertAtEnd
 
                 context->pushBlock(nextBlock);
             }
@@ -656,7 +734,7 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
         for (int j = 0; j < this->situations[i]->match_list.size(); j++, p++) {
             context->pushBlock(blocks[p]);
             this->situations[i]->codeGen(context);
-            llvm::BranchInst::Create(exitBlock, context->getCurBlock());
+            llvm::BranchInst::Create(exitBlock, context->getCurBlk());
             std::cout << "|--- [Success] In case " << i << ":" << j << std::endl;
             context->popBlock();
         }
@@ -670,11 +748,11 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
 llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating for statement" << std::endl;
     llvm::BasicBlock *startBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("start"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->getCurFunc());
     llvm::BasicBlock *loopBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("loop"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->getCurFunc());
     llvm::BasicBlock *exitBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->getCurFunc());
     // 定义循环变量
     tree::VariableExp *loopVar   = new tree::VariableExp(this->iter);
     loopVar->return_type         = tree::findVar(this->iter, this);
@@ -683,7 +761,7 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
         loopVar, this->start);
     initLoopVar->codeGen(context);  // 生成赋初值的代码 (i := start)
     llvm::BranchInst::Create(       // 跳转入 startBlock
-        startBlock, context->getCurBlock());
+        startBlock, context->getCurBlk());
     // 循环过程
     context->pushBlock(startBlock);              // startBlock
     tree::BinaryExp *cmp = new tree::BinaryExp(  // 判断循环变量是否到达终点值
@@ -691,7 +769,7 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
     llvm::Instruction *ret =
         llvm::BranchInst::Create(exitBlock,  // 到达终点值，跳入 exitBlock
             loopBlock,                       // 未到达终点值，跳入 loopBlock
-            cmp->codeGen(context), context->getCurBlock());
+            cmp->codeGen(context), context->getCurBlk());
     context->popBlock();
     context->pushBlock(loopBlock);  // loopBlock
     this->loop->codeGen(context);   // 生成代码块
@@ -707,7 +785,7 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
         loopVar, update);
     updateLoopVar->codeGen(context);  // i := i + 1 或 i := i - 1
     llvm::BranchInst::Create(         // 跳入 startBlock
-        startBlock, context->getCurBlock());
+        startBlock, context->getCurBlk());
     context->popBlock();
     context->pushBlock(exitBlock);  // exitBlock
     this->loop->codeGen(context);   // 最后一次循环
@@ -718,22 +796,22 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
 llvm::Value *tree::WhileStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating while statement" << std::endl;
     llvm::BasicBlock *startBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("start"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->getCurFunc());
     llvm::BasicBlock *loopBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("loop"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->getCurFunc());
     llvm::BasicBlock *exitBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->getCurFunc());
     llvm::BranchInst::Create(  // 首先跳转入 startBlock
-        startBlock, context->getCurBlock());
+        startBlock, context->getCurBlk());
     context->pushBlock(startBlock);                         // startBlock
     llvm::Value *ret = llvm::BranchInst::Create(loopBlock,  // 符合 cond ，继续 loopBlock
         exitBlock,  // 不符合 cond ，跳入 exitBlock
-        this->condition->codeGen(context), context->getCurBlock());
+        this->condition->codeGen(context), context->getCurBlk());
     context->popBlock();
     context->pushBlock(loopBlock);  // loopBlock
     this->loop->codeGen(context);   // 生成代码块
     llvm::BranchInst::Create(       // 继续循环，跳入 startBlock
-        startBlock, context->getCurBlock());
+        startBlock, context->getCurBlk());
     context->popBlock();
     context->pushBlock(exitBlock);  // exitBlock
     std::cout << "[Success] While loop generated" << std::endl;
@@ -743,17 +821,17 @@ llvm::Value *tree::WhileStm::codeGen(CodeGenContext *context) {
 llvm::Value *tree::RepeatStm::codeGen(CodeGenContext *context) {
     std::cout << "Creating repeat statement" << std::endl;
     llvm::BasicBlock *loopBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("loop"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->getCurFunc());
     llvm::BasicBlock *exitBlock =
-        llvm::BasicBlock::Create(MyContext, llvm::Twine("exit"), context->getCurFunc());
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->getCurFunc());
     llvm::BranchInst::Create(  // 跳入 loopBlock
-        loopBlock, context->getCurBlock());
+        loopBlock, context->getCurBlk());
     context->pushBlock(loopBlock);                               // loopBlock
     this->loop->codeGen(context);                                // 生成代码块
     llvm::Value *cond      = this->condition->codeGen(context);  // 跳转条件
     llvm::Instruction *ret = llvm::BranchInst::Create(exitBlock,  // 符合 until 条件，退出
         loopBlock,  // 不符合，跳回 loopBlock
-        cond, context->getCurBlock());
+        cond, context->getCurBlk());
     context->popBlock();
     context->pushBlock(exitBlock);  // exitBlock
     std::cout << "[Success] Repeat loop generated" << std::endl;
@@ -769,71 +847,71 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
         case OP_NOT:
             return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
                 this->operand->codeGen(context),
-                llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
-                llvm::Twine(""), context->getCurBlock());
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                llvm::Twine(""), context->getCurBlk());
         case OP_OPPO:
             if (this->operand->return_type->baseType == TY_INTEGER) {  // -m = 0 - m
                 return llvm::BinaryOperator::Create(llvm::Instruction::Sub,
-                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
             } else if (this->operand->return_type->baseType == TY_REAL) {
                 return llvm::BinaryOperator::Create(llvm::Instruction::FSub,
-                    llvm::ConstantFP::get(MyContext, llvm::APFloat(0.)),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                    llvm::ConstantFP::get(globalContext, llvm::APFloat(0.)),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
             }
             break;
         case OP_ABS:
             if (this->operand->return_type->baseType == TY_INTEGER) {
                 llvm::Value *cond          = llvm::CmpInst::Create(llvm::Instruction::ICmp,
                     llvm::CmpInst::ICMP_SGT,
-                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
                 llvm::BasicBlock *negBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("neg"), context->getCurFunc());
+                    globalContext, llvm::Twine("neg"), context->getCurFunc());
                 llvm::BasicBlock *posBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("pos"), context->getCurFunc());
+                    globalContext, llvm::Twine("pos"), context->getCurFunc());
                 llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("merge"), context->getCurFunc());
+                    globalContext, llvm::Twine("merge"), context->getCurFunc());
                 llvm::Value *ret = llvm::BranchInst::Create(negBlock,  // < 0, negBlock
                     posBlock,                                          // > 0, posBlock
-                    cond, context->getCurBlock());
+                    cond, context->getCurBlk());
                 context->pushBlock(negBlock);  // negBlock
                 llvm::BinaryOperator::Create(  // abs(m) = -m
                     llvm::Instruction::Sub,
-                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                    llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
                 llvm::BranchInst::Create(  // 跳入 mergeBlock
-                    mergeBlock, context->getCurBlock());
+                    mergeBlock, context->getCurBlk());
                 context->popBlock();
                 context->pushBlock(posBlock);     // faseBlock
                 this->operand->codeGen(context);  // abs(m) = m
                 llvm::BranchInst::Create(         // 跳入 mergeBlock
-                    mergeBlock, context->getCurBlock());
+                    mergeBlock, context->getCurBlk());
                 context->popBlock();
                 context->pushBlock(mergeBlock);  // mergeBlock
                 return ret;
             } else if (this->operand->return_type->baseType == TY_REAL) {
                 llvm::Value *cond          = llvm::CmpInst::Create(llvm::Instruction::ICmp,
                     llvm::CmpInst::ICMP_SGT,
-                    llvm::ConstantFP::get(MyContext, llvm::APFloat(0.)),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                    llvm::ConstantFP::get(globalContext, llvm::APFloat(0.)),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
                 llvm::BasicBlock *negBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("neg"), context->getCurFunc());
+                    globalContext, llvm::Twine("neg"), context->getCurFunc());
                 llvm::BasicBlock *posBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("pos"), context->getCurFunc());
+                    globalContext, llvm::Twine("pos"), context->getCurFunc());
                 llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(
-                    MyContext, llvm::Twine("merge"), context->getCurFunc());
-                llvm::Value *ret = llvm::BranchInst::Create(
-                    negBlock, posBlock, cond, context->getCurBlock());
+                    globalContext, llvm::Twine("merge"), context->getCurFunc());
+                llvm::Value *ret =
+                    llvm::BranchInst::Create(negBlock, posBlock, cond, context->getCurBlk());
                 context->pushBlock(negBlock);
                 llvm::BinaryOperator::Create(llvm::Instruction::FSub,
-                    llvm::ConstantFP::get(MyContext, llvm::APFloat(0.)),
-                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
-                llvm::BranchInst::Create(mergeBlock, context->getCurBlock());
+                    llvm::ConstantFP::get(globalContext, llvm::APFloat(0.)),
+                    this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
+                llvm::BranchInst::Create(mergeBlock, context->getCurBlk());
                 context->popBlock();
                 context->pushBlock(posBlock);
                 this->operand->codeGen(context);
-                llvm::BranchInst::Create(mergeBlock, context->getCurBlock());
+                llvm::BranchInst::Create(mergeBlock, context->getCurBlk());
                 context->popBlock();
                 context->pushBlock(mergeBlock);
                 return ret;
@@ -841,26 +919,26 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
         case OP_PRED:
             return llvm::BinaryOperator::Create(  // m - 1
                 llvm::Instruction::Sub, this->operand->codeGen(context),
-                llvm::ConstantInt::get(llvm::Type::getInt8Ty(MyContext), 1, true),
-                llvm::Twine(""), context->getCurBlock());
+                llvm::ConstantInt::get(llvm::Type::getInt8Ty(globalContext), 1, true),
+                llvm::Twine(""), context->getCurBlk());
         case OP_SUCC:
             return llvm::BinaryOperator::Create(  // m + 1
                 llvm::Instruction::Add, this->operand->codeGen(context),
-                llvm::ConstantInt::get(llvm::Type::getInt8Ty(MyContext), 1, true),
-                llvm::Twine(""), context->getCurBlock());
+                llvm::ConstantInt::get(llvm::Type::getInt8Ty(globalContext), 1, true),
+                llvm::Twine(""), context->getCurBlk());
         case OP_ODD:
             return llvm::BinaryOperator::Create(  // 0 & m
                 llvm::Instruction::And,
-                llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
-                this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                this->operand->codeGen(context), llvm::Twine(""), context->getCurBlk());
         case OP_CHR:
             return llvm::CastInst::CreateIntegerCast(this->operand->codeGen(context),
-                llvm::Type::getInt8Ty(MyContext), true, llvm::Twine(""),
-                context->getCurBlock());
+                llvm::Type::getInt8Ty(globalContext), true, llvm::Twine(""),
+                context->getCurBlk());
         case OP_ORD:
             return llvm::CastInst::CreateIntegerCast(this->operand->codeGen(context),
-                llvm::Type::getInt32Ty(MyContext), true, llvm::Twine(""),
-                context->getCurBlock());
+                llvm::Type::getInt32Ty(globalContext), true, llvm::Twine(""),
+                context->getCurBlk());
     }
     return nullptr;
 }
@@ -873,14 +951,13 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
                 this->operand1->return_type, op2->name);
             std::vector<llvm::Value *> arrIdx(2);
             arrIdx[0]           = llvm::ConstantInt::get(  // 0
-                MyContext, llvm::APInt(32, 0, true));
-            arrIdx[1]           = llvm::ConstantInt::get(            // index
-                MyContext, llvm::APInt(32, index, true));  // create member_index
+                globalContext, llvm::APInt(32, 0, true));
+            arrIdx[1]           = llvm::ConstantInt::get(                // index
+                globalContext, llvm::APInt(32, index, true));  // create member_index
             llvm::Value *memPtr = llvm::GetElementPtrInst::Create(
                 context->getLlvmType(this->operand1->return_type),
-                context->getValue(op2->name), arrIdx, llvm::Twine(""),
-                context->getCurBlock());
-            return new llvm::LoadInst(memPtr, llvm::Twine(""), false, context->getCurBlock());
+                context->getValue(op2->name), arrIdx, llvm::Twine(""), context->getCurBlk());
+            return new llvm::LoadInst(memPtr, llvm::Twine(""), false, context->getCurBlk());
         } else {
             std::cout << "[Error] Wrong member variable for record" << std::endl;
             exit(0);
@@ -889,12 +966,12 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
         if (this->operand1->node_type == ND_VARIABLE_EXP) {
             tree::VariableExp *op1 = static_cast<tree::VariableExp *>(this->operand1);
             std::vector<llvm::Value *> arrIdx(2);
-            arrIdx[0]           = llvm::ConstantInt::get(MyContext, llvm::APInt(32, 0, true));
-            arrIdx[1]           = this->operand2->codeGen(context);
+            arrIdx[0] = llvm::ConstantInt::get(globalContext, llvm::APInt(32, 0, true));
+            arrIdx[1] = this->operand2->codeGen(context);
             llvm::Value *memPtr = llvm::GetElementPtrInst::CreateInBounds(
                 context->getValue(op1->name), llvm::ArrayRef<llvm::Value *>(arrIdx),
-                llvm::Twine("tempname"), context->getCurBlock());
-            return new llvm::LoadInst(memPtr, llvm::Twine(""), false, context->getCurBlock());
+                llvm::Twine("tempname"), context->getCurBlk());
+            return new llvm::LoadInst(memPtr, llvm::Twine(""), false, context->getCurBlk());
         } else {
             std::cout << "[Error] Array's Ref is not an array type variable" << std::endl;
             exit(0);
@@ -908,47 +985,47 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
         switch (this->op_code) {
             case OP_ADD:
                 return llvm::BinaryOperator::Create(llvm::Instruction::FAdd, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MINUS:
                 return llvm::BinaryOperator::Create(llvm::Instruction::FSub, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MULTI:
                 return llvm::BinaryOperator::Create(llvm::Instruction::FMul, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_RDIV:
                 return llvm::BinaryOperator::Create(llvm::Instruction::FDiv, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_DDIV:
                 return llvm::BinaryOperator::Create(llvm::Instruction::SDiv, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MOD:
                 return llvm::BinaryOperator::Create(llvm::Instruction::SRem, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_AND:
                 return llvm::BinaryOperator::Create(llvm::Instruction::And, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_OR:
                 return llvm::BinaryOperator::Create(llvm::Instruction::Or, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             // logical
             case OP_SMALL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLT,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_LARGE:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_SMALL_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_LARGE_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_NOT_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             default:
                 std::cout << "[Error] Unknown type of op_code:" << op_code
                           << std::endl;  // not know what to do
@@ -958,46 +1035,46 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
         switch (op_code) {
             case OP_ADD:
                 return llvm::BinaryOperator::Create(llvm::Instruction::Add, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MINUS:
                 return llvm::BinaryOperator::Create(llvm::Instruction::Sub, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MULTI:
                 return llvm::BinaryOperator::Create(llvm::Instruction::Mul, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_RDIV:
                 return llvm::BinaryOperator::Create(llvm::Instruction::UDiv, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_DDIV:
                 return llvm::BinaryOperator::Create(llvm::Instruction::SDiv, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_MOD:
                 return llvm::BinaryOperator::Create(llvm::Instruction::SRem, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_AND:
                 return llvm::BinaryOperator::Create(llvm::Instruction::And, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_OR:
                 return llvm::BinaryOperator::Create(llvm::Instruction::Or, op1Val, op2Val,
-                    llvm::Twine(""), context->getCurBlock());
+                    llvm::Twine(""), context->getCurBlk());
             case OP_SMALL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLT,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_LARGE:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_SMALL_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_LARGE_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             case OP_NOT_EQUAL:
                 return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE,
-                    op1Val, op2Val, llvm::Twine(""), context->getCurBlock());
+                    op1Val, op2Val, llvm::Twine(""), context->getCurBlk());
             default:
                 std::cout << "[Error] Unknown type of op_code:" << op_code << std::endl;
                 exit(0);
@@ -1007,7 +1084,7 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
 
 llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
     std::cout << "Creating calling " << std::endl;
-    llvm::Function *func = context->module->getFunction(this->name.c_str());
+    llvm::Function *func = context->pModule->getFunction(this->name.c_str());
     if (func == nullptr) {
         std::cout << "[Error] Function: " << name << " not defined" << std::endl;
         exit(0);
@@ -1020,9 +1097,9 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
             if (arg->node_type == ND_VARIABLE_EXP) {  // 如果这个参数是变量
                 llvm::Value *ptr = context->getValue(
                     static_cast<tree::VariableExp *>(arg)->name);  // 取得变量的值
-                while (ptr->getType() != llvm::Type::getInt32PtrTy(MyContext)) {
-                    ptr = new llvm::LoadInst(
-                        ptr, llvm::Twine(""), false, context->getCurBlock());
+                while (ptr->getType() != llvm::Type::getInt32PtrTy(globalContext)) {
+                    ptr =
+                        new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlk());
                 }
                 argValues.push_back(ptr);
             } else if (arg->node_type == ND_BINARY_EXP) {
@@ -1033,15 +1110,15 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
                         int index = getRecordIndex(node->operand1->return_type, op2->name);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0]        = llvm::ConstantInt::get(  // 0
-                            MyContext, llvm::APInt(32, 0, true));
+                            globalContext, llvm::APInt(32, 0, true));
                         arrIdx[1]        = llvm::ConstantInt::get(  // index
-                            MyContext, llvm::APInt(32, index, true));
+                            globalContext, llvm::APInt(32, index, true));
                         llvm::Value *ptr = llvm::GetElementPtrInst::Create(
                             context->getLlvmType(node->operand1->return_type),  // 类型
                             context->getValue(op2->name),                       // 值
                             arrIdx,           // 记录所存在的序号
                             llvm::Twine(""),  // 名称
-                            context->getCurBlock());
+                            context->getCurBlk());
                         argValues.push_back(ptr);
                     } else {
                         std::cout
@@ -1054,12 +1131,12 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
                         VariableExp *op1 = static_cast<VariableExp *>(node->operand1);
                         std::vector<llvm::Value *> arrIdx(2);
                         arrIdx[0] =
-                            llvm::ConstantInt::get(MyContext, llvm::APInt(32, 0, true));
+                            llvm::ConstantInt::get(globalContext, llvm::APInt(32, 0, true));
                         arrIdx[1]        = node->operand2->codeGen(context);
                         llvm::Value *ptr = llvm::GetElementPtrInst::CreateInBounds(
                             context->getValue(op1->name),
                             llvm::ArrayRef<llvm::Value *>(arrIdx), llvm::Twine("tempname"),
-                            context->getCurBlock());
+                            context->getCurBlk());
                         argValues.push_back(ptr);
                     } else {
                         std::cout << "[Error] Array's Ref is not an array type variable"
@@ -1075,7 +1152,7 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
         }
     }
     return llvm::CallInst::Create(
-        func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlock());
+        func, llvm::makeArrayRef(argValues), llvm::Twine(""), context->getCurBlk());
 }
 
 llvm::Value *tree::ConstantExp::codeGen(CodeGenContext *context) {
@@ -1083,11 +1160,11 @@ llvm::Value *tree::ConstantExp::codeGen(CodeGenContext *context) {
 }
 
 llvm::Value *tree::VariableExp::codeGen(CodeGenContext *context) {
-    std::cout << "loading variable: " << this->name << std::endl;
+    std::cout << "loading variable: `" << this->name << "`" << std::endl;
     llvm::Value *ptr = context->getValue(this->name);
-    ptr = new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlock());
+    ptr              = new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlk());
     if (ptr->getType()->isPointerTy()) {
-        ptr = new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlock());
+        ptr = new llvm::LoadInst(ptr, llvm::Twine(""), false, context->getCurBlk());
     }
     return ptr;
 }
@@ -1100,15 +1177,15 @@ llvm::Value *tree::Value::codeGen(CodeGenContext *context) {
     switch (this->baseType) {
         case TY_INTEGER:
             return llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(MyContext), this->val.integer_value, true);
+                llvm::Type::getInt32Ty(globalContext), this->val.integer_value, true);
         case TY_REAL:
-            return llvm::ConstantFP::get(MyContext, llvm::APFloat(this->val.real_value));
+            return llvm::ConstantFP::get(globalContext, llvm::APFloat(this->val.real_value));
         case TY_CHAR:
             return llvm::ConstantInt::get(
-                llvm::Type::getInt8Ty(MyContext), this->val.char_value, true);
+                llvm::Type::getInt8Ty(globalContext), this->val.char_value, true);
         case TY_BOOLEAN:
             return llvm::ConstantInt::get(
-                llvm::Type::getInt1Ty(MyContext), this->val.boolean_value, true);
+                llvm::Type::getInt1Ty(globalContext), this->val.boolean_value, true);
         default: return nullptr;
     }
 }
