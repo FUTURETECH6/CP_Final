@@ -78,8 +78,8 @@ class CodeGenContext {
         CodeGenStack.pop();
         delete top;
     }
-    void insertConst(std::string name, tree::Exp *const_v) {
-        CodeGenStack.top()->constMap[name] = const_v;
+    void insertConst(std::string name, tree::Exp *_const) {
+        CodeGenStack.top()->constMap[name] = _const;
     }
 };
 

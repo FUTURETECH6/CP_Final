@@ -49,10 +49,10 @@ namespace tree {
 
     class Base {
       public:
-        int node_type;
+        int nodeType;
         Base *father = nullptr;
         bool isLegal = true;
-        Base(int type = 0) : node_type(type) {}
+        Base(int type = 0) : nodeType(type) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
         virtual bool checkSemantics()                         = 0;
     };
@@ -88,11 +88,11 @@ namespace tree {
         Body *body     = nullptr;
         Program(const std::string &_name) : Base(ND_PROGRAM), name(_name) {}
         void PASCAL_ADD_TURN(Routine *_routine) {
-            this->DEFINETION_CHANGE_PLUS(_routine->define);
-            this->BODY_CHANGE_PLUS(_routine->body);
+            this->setDefination(_routine->define);
+            this->setBody(_routine->body);
         }
-        void DEFINETION_CHANGE_PLUS(Define *);
-        void BODY_CHANGE_PLUS(Body *);
+        void setDefination(Define *);
+        void setBody(Body *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -156,8 +156,8 @@ namespace tree {
 
     class Exp : public Base {
       public:
-        Value *return_value = nullptr;
-        Type *return_type   = nullptr;
+        Value *returnVal = nullptr;
+        Type *returnType = nullptr;
         Exp(int type = 0) : Base(type) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
     };
@@ -197,8 +197,8 @@ namespace tree {
     class VarDef : public Base {
       public:
         std::string name;
-        Type *type     = nullptr;  // cannot be null
-        bool is_global = false;
+        Type *type    = nullptr;  // cannot be null
+        bool isGlobal = false;
         VarDef(const std::string &_name, Type *_type)
             : Base(ND_VAR_DEF), name(_name), type(_type) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -208,17 +208,18 @@ namespace tree {
     class FuncDef : public Base {
       public:
         std::string name;
-        std::vector<Type *> argsType;
-        std::vector<std::string> argsName;
-        std::vector<bool> args_is_formal_parameters;  // true:&, false:local
-        Type *retType  = nullptr;                     // procedure == nullptr
+        std::vector<Type *> argTypeVec;
+        std::vector<std::string> argNameVec;
+        std::vector<bool>
+            argFormalVec;          // whether formal param? true: pass self, false: pass ptr
+        Type *retType  = nullptr;  // procedure == nullptr
         Define *define = nullptr;
         Body *body     = nullptr;
         FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
-        void ARGS_CHANGE_PLUS(const std::string &, Type *, bool);
+        void addArgvs(const std::string &, Type *, bool);
         void setReturnType(Type *);
-        void DEFINETION_CHANGE_PLUS(Define *);
-        void BODY_CHANGE_PLUS(Body *);
+        void setDefination(Define *);
+        void setBody(Body *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -233,10 +234,10 @@ namespace tree {
 
     class AssignStm : public Stm {
       public:
-        Exp *left_value;
-        Exp *right_value;
+        Exp *leftVal;
+        Exp *rightVal;
         AssignStm(Exp *left, Exp *right)
-            : Stm(ND_ASSIGN_STM), left_value(left), right_value(right) {
+            : Stm(ND_ASSIGN_STM), leftVal(left), rightVal(right) {
             left->father = right->father = this;
         }
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -248,7 +249,7 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallStm(const std::string &_name) : Stm(ND_CALL_STM), name(_name) {}
-        void ARGS_CHANGE_PLUS(Exp *);
+        void addArgvs(Exp *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -263,9 +264,9 @@ namespace tree {
 
     class IfStm : public Stm {
       public:
-        Exp *condition = nullptr;
-        Body *true_do  = nullptr;  // cannot be nullptr
-        Body *false_do = nullptr;  // can be nullptr
+        Exp *condition  = nullptr;
+        Body *trueBody  = nullptr;  // cannot be nullptr
+        Body *falseBody = nullptr;  // can be nullptr
         IfStm() : Stm(ND_IF_STM) {}
         void setCondition(Exp *);
         void addTrue(Body *);
@@ -332,10 +333,10 @@ namespace tree {
 
     class UnaryExp : public Exp {
       public:
-        int op_code;
+        int opcode;
         Exp *operand;
-        UnaryExp(int _op_code, Exp *_operand)
-            : Exp(ND_UNARY_EXP), op_code(_op_code), operand(_operand) {
+        UnaryExp(int _opcode, Exp *_operand)
+            : Exp(ND_UNARY_EXP), opcode(_opcode), operand(_operand) {
             _operand->father = this;
         }
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -344,13 +345,10 @@ namespace tree {
 
     class BinaryExp : public Exp {
       public:
-        int op_code;
+        int opcode;
         Exp *operand1, *operand2;
-        BinaryExp(int _op_code, Exp *_operand1, Exp *_operand2)
-            : Exp(ND_BINARY_EXP),
-              op_code(_op_code),
-              operand1(_operand1),
-              operand2(_operand2) {
+        BinaryExp(int _opcode, Exp *_operand1, Exp *_operand2)
+            : Exp(ND_BINARY_EXP), opcode(_opcode), operand1(_operand1), operand2(_operand2) {
             _operand1->father = operand2->father = this;
         }
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -362,7 +360,7 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallExp(const std::string &_name) : Exp(ND_CALL_EXP), name(_name) {}
-        void ARGS_CHANGE_PLUS(Exp *args);
+        void addArgvs(Exp *args);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -370,9 +368,7 @@ namespace tree {
     class ConstantExp : public Exp {
       public:
         Value *value;
-        ConstantExp(Value *_value) : Exp(NX_CONST_EXP), value(_value) {
-            return_value = _value;
-        }
+        ConstantExp(Value *_value) : Exp(NX_CONST_EXP), value(_value) { returnVal = _value; }
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -388,13 +384,13 @@ namespace tree {
     class Value {
       public:
         int baseType;  // 0: int 1: real 2: char 3: boolean 5: array 6: record
-        union return_value {
-            int integer_value;
-            float real_value;
-            char char_value;
-            bool boolean_value;
-            std::string *string_value;
-            std::vector<Value *> *children_value;  // a list of the value of children
+        union returnVal {
+            int intVal;
+            float realVal;
+            char charVal;
+            bool boolVal;
+            std::string *stringVal;
+            std::vector<Value *> *childValVec;  // a vector of the value of children
         } val;
         llvm::Value *codeGen(CodeGenContext *context);
     };
@@ -404,10 +400,10 @@ namespace tree {
     bool isSameType(Type *type1, Type *type2);
     Base *findName(const std::string &name, Base *node);
     bool canFindLabel(const int &label, Base *node);
-    ConstDef *findConst(const std::string &type_name, Base *node);
-    Type *findType(const std::string &type_name, Base *node);
-    Type *findVar(const std::string &type_name, Base *node);
-    FuncDef *findFunction(const std::string &type_name, Base *node);
+    ConstDef *findConst(const std::string &typeName, Base *node);
+    Type *findType(const std::string &typeName, Base *node);
+    Type *findVar(const std::string &typeName, Base *node);
+    FuncDef *findFunction(const std::string &typeName, Base *node);
 
 }  // namespace tree
 #endif

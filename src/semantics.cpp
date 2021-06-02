@@ -45,22 +45,19 @@ bool canFillTypeWithValue(Type *type, Value *value) {
         case TY_ARRAY:
             if (value->baseType != TY_ARRAY)
                 return false;
-            if (type->indexEnd - type->indexStart + 1 !=
-                (*(value->val.children_value)).size())
+            if (type->indexEnd - type->indexStart + 1 != (*(value->val.childValVec)).size())
                 return false;
             for (int i = 0; i <= type->indexEnd - type->indexStart; i++)
-                if (!canFillTypeWithValue(
-                        type->childType[i], (*(value->val.children_value))[i]))
+                if (!canFillTypeWithValue(type->childType[i], (*(value->val.childValVec))[i]))
                     return false;
             return true;
         case TY_RECORD:
             if (value->baseType != TY_RECORD)
                 return false;
-            if (type->childType.size() != (*(value->val.children_value)).size())
+            if (type->childType.size() != (*(value->val.childValVec)).size())
                 return false;
             for (int i = 0; i < type->childType.size(); i++)
-                if (!canFillTypeWithValue(
-                        type->childType[0], (*(value->val.children_value))[i]))
+                if (!canFillTypeWithValue(type->childType[0], (*(value->val.childValVec))[i]))
                     return false;
             return true;
         default: return false;
@@ -77,14 +74,14 @@ Type *generateTypeByValue(Value *value) {
         case TY_STRING: type = new Type(value->baseType); break;
         case TY_RECORD:
             type = new Type(value->baseType);
-            for (auto val : (*(value->val.children_value)))
+            for (auto val : (*(value->val.childValVec)))
                 type->childType.push_back(generateTypeByValue(val));
             break;
         case TY_ARRAY:
             type             = new Type(TY_ARRAY);
             type->indexStart = 0;
-            type->indexEnd   = (*(value->val.children_value)).size() - 1;
-            type->childType.push_back(generateTypeByValue((*(value->val.children_value))[0]));
+            type->indexEnd   = (*(value->val.childValVec)).size() - 1;
+            type->childType.push_back(generateTypeByValue((*(value->val.childValVec))[0]));
             break;
         default: type = nullptr;
     }
@@ -262,7 +259,7 @@ bool FuncDef::checkSemantics() {
     // check children
     isLegal &= define->checkSemantics();
     if (isLegal) {
-        for (std::string arg_name : argsName) {
+        for (std::string arg_name : argNameVec) {
             if (arg_name == name) {
                 isLegal = false;
                 break;
@@ -335,13 +332,13 @@ bool FuncDef::checkSemantics() {
 // stm
 bool AssignStm::checkSemantics() {
     // check children
-    isLegal = left_value->checkSemantics() && right_value->checkSemantics();
+    isLegal = leftVal->checkSemantics() && rightVal->checkSemantics();
     // check between children
     if (isLegal)
-        isLegal = isSameType(left_value->return_type, right_value->return_type);
+        isLegal = isSameType(leftVal->returnType, rightVal->returnType);
     // check itself
     if (isLegal)
-        if (left_value->return_value != nullptr) {
+        if (leftVal->returnVal != nullptr) {
             isLegal = false;
             char info[200];
             sprintf(info, "Semantics Error: Constant obeject cannot be the left value in an "
@@ -373,7 +370,7 @@ bool CallStm::checkSemantics() {
             char info[200];
             sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
             yyerror(this, info);
-        } else if (args.size() != function->argsType.size()) {
+        } else if (args.size() != function->argTypeVec.size()) {
             isLegal = false;
             char info[200];
             sprintf(info,
@@ -383,7 +380,7 @@ bool CallStm::checkSemantics() {
             yyerror(this, info);
         } else {
             for (int i = 0; i < args.size(); i++)
-                if (!isSameType(args[i]->return_type, function->argsType[i])) {
+                if (!isSameType(args[i]->returnType, function->argTypeVec[i])) {
                     isLegal = false;
                     char info[200];
                     sprintf(info,
@@ -402,7 +399,7 @@ bool CaseStm::checkSemantics() {
     // 全常量检测
     for (auto situation : situations)
         for (auto match_item : situation->caseVec)
-            if (match_item->return_value == nullptr) {
+            if (match_item->returnVal == nullptr) {
                 char info[200];
                 sprintf(info,
                     "Semantics Error: The match items in case statement must be constant.");
@@ -411,10 +408,10 @@ bool CaseStm::checkSemantics() {
                 return isLegal;
             }
     // 类型匹配
-    bool is_int = isTypeInt(object->return_type);
+    bool is_int = isTypeInt(object->returnType);
     for (auto situation : situations)
         for (auto match_item : situation->caseVec)
-            if (is_int != isTypeInt(match_item->return_type)) {
+            if (is_int != isTypeInt(match_item->returnType)) {
                 char info[200];
                 sprintf(info, "Semantics Error: The match items in case statement must have "
                               "the same type as the switch object.");
@@ -428,8 +425,8 @@ bool CaseStm::checkSemantics() {
         i = false;
     for (auto situation : situations)
         for (Exp *match_item : situation->caseVec) {
-            int id = is_int ? (match_item->return_value->val.integer_value + 32768)
-                            : ((int)match_item->return_value->val.char_value);
+            int id = is_int ? (match_item->returnVal->val.intVal + 32768)
+                            : ((int)match_item->returnVal->val.charVal);
             if (flag[id]) {
                 char info[200];
                 sprintf(info,
@@ -446,8 +443,8 @@ bool CaseStm::checkSemantics() {
 bool ForStm::checkSemantics() {
     start->checkSemantics();
     end->checkSemantics();
-    if (!((isTypeInt(start->return_type) && isTypeInt(end->return_type)) ||
-            (isTypeChar(start->return_type) && isTypeChar(end->return_type)))) {
+    if (!((isTypeInt(start->returnType) && isTypeInt(end->returnType)) ||
+            (isTypeChar(start->returnType) && isTypeChar(end->returnType)))) {
         char info[200];
         sprintf(info, "Semantics Error: The start index or the end index is illegal.");
         yyerror(this, info);
@@ -473,12 +470,12 @@ bool GotoStm::checkSemantics() {
 bool IfStm::checkSemantics() {
     // check children
     isLegal &= condition->checkSemantics();
-    isLegal &= true_do->checkSemantics();
-    if (false_do != nullptr)
-        isLegal &= false_do->checkSemantics();
+    isLegal &= trueBody->checkSemantics();
+    if (falseBody != nullptr)
+        isLegal &= falseBody->checkSemantics();
     // check between children
     // check itself
-    if (isTypeBoolean(condition->return_type))
+    if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
         char info[200];
@@ -508,7 +505,7 @@ bool RepeatStm::checkSemantics() {
     isLegal &= loop->checkSemantics();
     // check between children
     // check itself
-    if (isTypeBoolean(condition->return_type))
+    if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
         char info[200];
@@ -525,7 +522,7 @@ bool WhileStm::checkSemantics() {
     isLegal &= loop->checkSemantics();
     // check between children
     // check itself
-    if (isTypeBoolean(condition->return_type))
+    if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
         char info[200];
@@ -540,115 +537,115 @@ bool WhileStm::checkSemantics() {
 bool UnaryExp::checkSemantics() {
     isLegal = operand->checkSemantics();
     if (isLegal)
-        switch (op_code) {
+        switch (opcode) {
             case OP_OPPO: {
-                if (!isTypeInt(operand->return_type) && !isTypeReal(operand->return_type)) {
+                if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of an operand with an unary "
                                   "operator \'-\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = copyType(operand->return_type);
+                    returnType = copyType(operand->returnType);
                 }
             } break;
             case OP_NOT: {
-                if (!isTypeChar(operand->return_type)) {
+                if (!isTypeChar(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of an operand with an unary "
                                   "operator \'not\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_ABS: {
-                if (!isTypeInt(operand->return_type) && !isTypeReal(operand->return_type)) {
+                if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'abs\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = copyType(operand->return_type);
+                    returnType = copyType(operand->returnType);
                 }
             } break;
             case OP_PRED: {
-                if (!isTypeChar(operand->return_type)) {
+                if (!isTypeChar(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'pred\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_CHAR);
+                    returnType = new Type(TY_CHAR);
                 }
             } break;
             case OP_SUCC: {
-                if (!isTypeChar(operand->return_type)) {
+                if (!isTypeChar(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'succ\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_CHAR);
+                    returnType = new Type(TY_CHAR);
                 }
             } break;
             case OP_ODD: {
-                if (!isTypeInt(operand->return_type)) {
+                if (!isTypeInt(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'odd\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_CHR: {
-                if (!isTypeInt(operand->return_type)) {
+                if (!isTypeInt(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'chr\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_CHAR);
+                    returnType = new Type(TY_CHAR);
                 }
             } break;
             case OP_ORD: {
-                if (!isTypeChar(operand->return_type)) {
+                if (!isTypeChar(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'ord\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_SQR: {
-                if (!isTypeInt(operand->return_type) && !isTypeReal(operand->return_type)) {
+                if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'sqr\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_REAL);
+                    returnType = new Type(TY_REAL);
                 }
             } break;
             case OP_SQRT: {
-                if (!isTypeInt(operand->return_type) && !isTypeReal(operand->return_type)) {
+                if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of the parameter in function "
                                   "\'sqrt\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_REAL);
+                    returnType = new Type(TY_REAL);
                 }
             } break;
             default: {
@@ -665,267 +662,240 @@ bool UnaryExp::checkSemantics() {
 bool BinaryExp::checkSemantics() {
     isLegal = operand1->checkSemantics();
     if (isLegal)
-        switch (op_code) {
+        switch (opcode) {
             case OP_ADD: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'+\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->return_type) ||
-                        isTypeReal(operand2->return_type))
-                        return_type = new Type(TY_REAL);
+                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                        returnType = new Type(TY_REAL);
                     else
-                        return_type = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_MINUS: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'-\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->return_type) ||
-                        isTypeReal(operand2->return_type))
-                        return_type = new Type(TY_REAL);
+                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                        returnType = new Type(TY_REAL);
                     else
-                        return_type = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_MULTI: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'*\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->return_type) ||
-                        isTypeReal(operand2->return_type))
-                        return_type = new Type(TY_REAL);
+                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                        returnType = new Type(TY_REAL);
                     else
-                        return_type = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_RDIV: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'/\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_REAL);
+                    returnType = new Type(TY_REAL);
                 }
             } break;
             case OP_DDIV: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'div\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_MOD: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeInt(operand1->return_type) || !isTypeInt(operand2->return_type)) {
+                if (!isTypeInt(operand1->returnType) || !isTypeInt(operand2->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'%%\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INTEGER);
                 }
             } break;
             case OP_AND: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeChar(operand1->return_type) ||
-                    !isTypeChar(operand2->return_type)) {
+                if (!isTypeChar(operand1->returnType) || !isTypeChar(operand2->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'and\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_OR: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeChar(operand1->return_type) ||
-                    !isTypeChar(operand2->return_type)) {
+                if (!isTypeChar(operand1->returnType) || !isTypeChar(operand2->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'or\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_SMALL: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_LARGE: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'>\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_SMALL_EQUAL: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_LARGE_EQUAL: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'>=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_EQUAL: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_NOT_EQUAL: {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->return_type) &&
-                        !isTypeReal(operand1->return_type) &&
-                        !isTypeChar(operand1->return_type)) ||
-                    (!isTypeInt(operand2->return_type) &&
-                        !isTypeReal(operand2->return_type) &&
-                        !isTypeChar(operand1->return_type))) {
+                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
+                        !isTypeChar(operand1->returnType)) ||
+                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
+                        !isTypeChar(operand1->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<>\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    return_type = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOLEAN);
                 }
             } break;
             case OP_DOT: {
-                if (isTypeRecord(operand1->return_type))
-                    if (canFindChild(operand1->return_type, ((VariableExp *)operand2)->name))
-                        return_type = copyType(findChildType(
-                            operand1->return_type, ((VariableExp *)operand2)->name));
+                if (isTypeRecord(operand1->returnType))
+                    if (canFindChild(operand1->returnType, ((VariableExp *)operand2)->name))
+                        returnType = copyType(findChildType(
+                            operand1->returnType, ((VariableExp *)operand2)->name));
                     else {
                         char info[200];
                         sprintf(info,
@@ -946,11 +916,9 @@ bool BinaryExp::checkSemantics() {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (isTypeArray(operand1->return_type) ||
-                    isTypeString(operand1->return_type)) {
-                    if (isTypeInt(operand2->return_type) ||
-                        isTypeChar(operand2->return_type)) {
-                        return_type = copyType(operand1->return_type->childType[0]);
+                if (isTypeArray(operand1->returnType) || isTypeString(operand1->returnType)) {
+                    if (isTypeInt(operand2->returnType) || isTypeChar(operand2->returnType)) {
+                        returnType = copyType(operand1->returnType->childType[0]);
                     } else {
                         char info[200];
                         sprintf(info, "Semantics Error: The index must be integer or char.");
@@ -988,7 +956,7 @@ bool CallExp::checkSemantics() {
         char info[200];
         sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
         yyerror(this, info);
-    } else if (args.size() != function->argsType.size()) {
+    } else if (args.size() != function->argTypeVec.size()) {
         isLegal = false;
         char info[200];
         sprintf(info,
@@ -998,7 +966,7 @@ bool CallExp::checkSemantics() {
         yyerror(this, info);
     } else {
         for (int i = 0; i < args.size(); i++)
-            if (!isSameType(args[i]->return_type, function->argsType[i])) {
+            if (!isSameType(args[i]->returnType, function->argTypeVec[i])) {
                 isLegal = false;
                 char info[200];
                 sprintf(info,
@@ -1009,14 +977,14 @@ bool CallExp::checkSemantics() {
                 break;
             }
         if (isLegal)
-            return_type = copyType(function->retType);
+            returnType = copyType(function->retType);
     }
     return isLegal;
 }
 
 bool ConstantExp::checkSemantics() {
-    return_type = generateTypeByValue(value);
-    isLegal     = true;
+    returnType = generateTypeByValue(value);
+    isLegal    = true;
     return isLegal;
 }
 
@@ -1027,28 +995,28 @@ bool VariableExp::checkSemantics() {
         isLegal = false;
     else
         // printf("breakpoint2\n");
-        switch (temp->node_type) {
+        switch (temp->nodeType) {
             case ND_CONST_DEF: {
-                auto *node   = (ConstDef *)temp;
-                isLegal      = true;
-                return_type  = node->value->return_type;
-                return_value = node->value->return_value;
+                auto *node = (ConstDef *)temp;
+                isLegal    = true;
+                returnType = node->value->returnType;
+                returnVal  = node->value->returnVal;
             } break;
             case ND_VAR_DEF: {
-                auto node   = (VarDef *)temp;
-                isLegal     = true;
-                return_type = node->type;
+                auto node  = (VarDef *)temp;
+                isLegal    = true;
+                returnType = node->type;
             } break;
             case ND_ARG_DEF: {
-                auto *node  = (ArgDef *)temp;
-                isLegal     = true;
-                return_type = node->type;
+                auto *node = (ArgDef *)temp;
+                isLegal    = true;
+                returnType = node->type;
             } break;
             case ND_FUNC_DEF: {
                 auto *node = (FuncDef *)temp;
                 if (node->retType != nullptr) {
-                    isLegal     = true;
-                    return_type = node->retType;
+                    isLegal    = true;
+                    returnType = node->retType;
                 } else
                     isLegal = false;
             } break;

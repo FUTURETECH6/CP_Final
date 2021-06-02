@@ -5,7 +5,7 @@
 #include "tree.h"
 
 extern int doyyparse(char *file);
-extern tree::Program *ast_root;
+extern tree::Program *treeRoot;
 
 int main(int argc, char **argv) {
     if (doyyparse(argv[1])) {
@@ -13,9 +13,9 @@ int main(int argc, char **argv) {
         return -1;
     }
     std::cout << "after yyparse()" << std::endl;
-    tree::printTree("a.tree", ast_root);
+    tree::printTree("a.tree", treeRoot);
 
-    if (ast_root->checkSemantics() == false) {
+    if (treeRoot->checkSemantics() == false) {
         return 0;
     }
     std::cout << "semantics passed" << std::endl;
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     llvm::InitializeNativeTarget();
     CodeGenContext context;
 
-    context.generateCode(*ast_root, "a.bc");
+    context.generateCode(*treeRoot, "a.bc");
 
     context.runCode();
     return 0;

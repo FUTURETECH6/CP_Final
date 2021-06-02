@@ -11,7 +11,7 @@ extern "C" FILE *yyin;
 int PASCLsymboltableSIZECURR = 0;
 symbolTableTreeNode PASCALiconTable[symbolTable_SIZE];
 
-tree::Program *ast_root;
+tree::Program *treeRoot;
 std::vector<tree::TypeDef *> tmp;
 %}
 
@@ -84,7 +84,7 @@ std::vector<tree::TypeDef *> tmp;
 %nonassoc TOKEN_FUNCTION
 
 %%
-PASCAL_PROGRAM:       PASCAL_HEAD_PROGRAM regular_array TOKEN_DOT        {ast_root = $1; ast_root->PASCAL_ADD_TURN($2);}
+PASCAL_PROGRAM:       PASCAL_HEAD_PROGRAM regular_array TOKEN_DOT        {treeRoot = $1; treeRoot->PASCAL_ADD_TURN($2);}
                     ;
     
 PASCAL_HEAD_PROGRAM:  TOKEN_PROGRAM PSACL_identify TOKEN_SEMI             {$$ = new Program(PASCALiconTable[$2].id);}
@@ -115,16 +115,16 @@ COSNT_PSACL_ARRAY:      COSNT_PSACL_ARRAY PSACL_identify TOKEN_EQUAL VLU_EXP_PSA
                     | PSACL_identify TOKEN_EQUAL VLU_EXP_PSACL_COSNT TOKEN_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(PASCALiconTable[$1].id, (Exp*)$3));}
                     ;
 
-VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = $1; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
-                    | PSACL_realnum                            {Value* value= new Value; value->baseType = TY_REAL; value->val.real_value = atof(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_REAL);}
-                    | PSACL_character                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.char_value = PASCALiconTable[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_CHAR);}
-                    | PSACL_str                          {Value* value= new Value; value->baseType = TY_STRING; value->val.string_value = new string(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_STRING);}
+VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.intVal = $1; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
+                    | PSACL_realnum                            {Value* value= new Value; value->baseType = TY_REAL; value->val.realVal = atof(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_REAL);}
+                    | PSACL_character                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.charVal = PASCALiconTable[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_CHAR);}
+                    | PSACL_str                          {Value* value= new Value; value->baseType = TY_STRING; value->val.stringVal = new string(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_STRING);}
                     | EXP_SYSTEM_CONTS                           {$$ = $1;}
                     ;
 
-EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_INTEGER);}
+EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolVal = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOLEAN);}
+                    | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolVal = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOLEAN);}
+                    | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.intVal = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_INTEGER);}
                     ;
 
 Category_PSACL:            TOKEN_TYPE Category_PSACL_ARRAY             {$$ = $2; tmp = *$$;}
@@ -153,8 +153,8 @@ Category_STSTEM_TY:             TOKEN_CHAR                            {$$ = new 
 Category_TYPE_DECLARTION_EASY:     Category_STSTEM_TY                          {$$ = $1;} // Type
                     | PSACL_identify                              {bool T1 = false; for(auto tdef : tmp) {if(tdef->name == PASCALiconTable[$1].id) {$$ = tdef->type; T1 = true;}} if(T1==false) yyerror("Semantics Error: Undefined type");} // we define
                     // | TOKEN_LP STR_designate_array TOKEN_RP               {$$ = $2;}
-                    | VLU_EXP_PSACL_COSNT TOKEN_DOTDOT VLU_EXP_PSACL_COSNT  {$$ = new Type(TY_ARRAY); $$->indexStart = ((ConstantExp*)$1)->value->val.integer_value; 
-                                                                                  $$->indexEnd = ((ConstantExp*)$3)->value->val.integer_value;
+                    | VLU_EXP_PSACL_COSNT TOKEN_DOTDOT VLU_EXP_PSACL_COSNT  {$$ = new Type(TY_ARRAY); $$->indexStart = ((ConstantExp*)$1)->value->val.intVal; 
+                                                                                  $$->indexEnd = ((ConstantExp*)$3)->value->val.intVal;
                                                         }
                     ;
 
@@ -193,13 +193,13 @@ informal_PASCAL:         informal_PASCAL F_def_PASCAL_DECLARTION        {$$ = $1
                     | %prec "then"                      {$$ = new std::vector<FuncDef *>();} /* empty */
                     ;
 
-F_def_PASCAL_DECLARTION:        FUNC_DEF_FIRST_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                   {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);} // FuncDef *
+F_def_PASCAL_DECLARTION:        FUNC_DEF_FIRST_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                   {$$ = $1; $$->setBody($3->body); $$->setDefination($3->define);} // FuncDef *
                     ;
 
-FUNC_DEF_FIRST_PASCAL_H:        TOKEN_FUNCTION PSACL_identify FUNC_PARA_PASCL TOKEN_COLON Category_TYPE_DECLARTION_EASY       {$$ = $3; $$->name = PASCALiconTable[$2].id; $$->setReturnType($5); for(auto argt: $$->argsType) {argt->father = $$;}} // TODO                                                                 
+FUNC_DEF_FIRST_PASCAL_H:        TOKEN_FUNCTION PSACL_identify FUNC_PARA_PASCL TOKEN_COLON Category_TYPE_DECLARTION_EASY       {$$ = $3; $$->name = PASCALiconTable[$2].id; $$->setReturnType($5); for(auto argt: $$->argTypeVec) {argt->father = $$;}} // TODO                                                                 
                     ;
 
-Pro_def_PASCAL_DECLARTION:       FUNC_DEF_PROCED_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                  {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);}
+Pro_def_PASCAL_DECLARTION:       FUNC_DEF_PROCED_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                  {$$ = $1; $$->setBody($3->body); $$->setDefination($3->define);}
                     ;
 
 FUNC_DEF_PROCED_PASCAL_H:       TOKEN_PROCEDURE PSACL_identify FUNC_PARA_PASCL       {$$ = $3; $$->name = PASCALiconTable[$2].id;} // TODO
@@ -209,14 +209,14 @@ FUNC_PARA_PASCL:           TOKEN_LP FUNC_PARA_ARRAY_DECLARTION TOKEN_RP         
                     | /* empty */                       {$$ = new FuncDef("tmp");}
                     ;
 
-FUNC_PARA_ARRAY_DECLARTION:       FUNC_PARA_ARRAY_DECLARTION TOKEN_SEMI FUNC_PAR_ARRAY_TYPE                      {$$ = $1; $$->argsName.insert($$->argsName.end(), $3->argsName.begin(), $3->argsName.end());
-                                                                                        $$->argsType.insert($$->argsType.end(), $3->argsType.begin(), $3->argsType.end());
-                                                                                        $$->args_is_formal_parameters.insert($$->args_is_formal_parameters.end(), $3->args_is_formal_parameters.begin(), $3->args_is_formal_parameters.end());}
+FUNC_PARA_ARRAY_DECLARTION:       FUNC_PARA_ARRAY_DECLARTION TOKEN_SEMI FUNC_PAR_ARRAY_TYPE                      {$$ = $1; $$->argNameVec.insert($$->argNameVec.end(), $3->argNameVec.begin(), $3->argNameVec.end());
+                                                                                        $$->argTypeVec.insert($$->argTypeVec.end(), $3->argTypeVec.begin(), $3->argTypeVec.end());
+                                                                                        $$->argFormalVec.insert($$->argFormalVec.end(), $3->argFormalVec.begin(), $3->argFormalVec.end());}
                     | FUNC_PAR_ARRAY_TYPE                                            {$$ = $1;}
                     ;
 
-FUNC_PAR_ARRAY_TYPE:       STR_PARAMATER_VAR_LIST TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, true);}} // true args, type, bool
-                    | STR_PARAMATER_VAL_ARRAY TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, false);}} // false
+FUNC_PAR_ARRAY_TYPE:       STR_PARAMATER_VAR_LIST TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->addArgvs(iter, $3, true);}} // true args, type, bool
+                    | STR_PARAMATER_VAL_ARRAY TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->addArgvs(iter, $3, false);}} // false
                     ;
 
 STR_PARAMATER_VAR_LIST:        TOKEN_VAR STR_designate_array                   {$$ = $2;} // std::vector <string> procedure true
@@ -256,9 +256,9 @@ STATEMENT_ALLOCATE:          PSACL_identify TOKEN_ASSIGN EXP_PASCL_express      
                     ;
 
 STATEMENT_procdure:            PSACL_identify                              {$$ = new CallStm(PASCALiconTable[$1].id);}
-                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallStm(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallStm*)$$)->ARGS_CHANGE_PLUS(stm);} // TODO
-                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXPR_ARRAY_VAL TOKEN_RP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->ARGS_CHANGE_PLUS(stm);}
-                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXP_PASCL_FAT_E TOKEN_RP         {$$ = $1; ((CallStm*)$$)->ARGS_CHANGE_PLUS($3);}
+                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallStm(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallStm*)$$)->addArgvs(stm);} // TODO
+                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXPR_ARRAY_VAL TOKEN_RP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->addArgvs(stm);}
+                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXP_PASCL_FAT_E TOKEN_RP         {$$ = $1; ((CallStm*)$$)->addArgvs($3);}
                     ;
 
 SYSTEM_PASCL_PRODUCRE:             TOKEN_WRITE                           {$$ = new CallStm("write");}
@@ -338,9 +338,9 @@ CALLEXP_SYSTEM_FUNCTION:            TOKEN_ABS                             {$$ = 
 
 
 EXP_PASCL_FAT_E:               PSACL_identify                              {$$ = new VariableExp(PASCALiconTable[$1].id);}
-                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallExp(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallExp*)$$)->ARGS_CHANGE_PLUS(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
+                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallExp(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallExp*)$$)->addArgvs(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
                     | CALLEXP_SYSTEM_FUNCTION                         {$$ = $1;}
-                    | CALLEXP_SYSTEM_FUNCTION TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->ARGS_CHANGE_PLUS(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
+                    | CALLEXP_SYSTEM_FUNCTION TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->addArgvs(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
                     | VLU_EXP_PSACL_COSNT                       {$$ = $1;}
                     | TOKEN_LP EXP_PASCL_express TOKEN_RP              {$$ = $2;}
                     | TOKEN_NOT EXP_PASCL_FAT_E                      {$$ = new UnaryExp(OP_NOT, $2);}

@@ -7,25 +7,25 @@ std::string print_rec(tree::Value *value, int layer) {
     switch (value->baseType) {
         case TY_INTEGER: {
             char val[10];
-            sprintf(val, "%d", value->val.integer_value);
+            sprintf(val, "%d", value->val.intVal);
             str.append(val);
         } break;
         case TY_REAL: {
             char val[10];
-            sprintf(val, "%.2f", value->val.real_value);
+            sprintf(val, "%.2f", value->val.realVal);
             str.append(val);
         } break;
         case TY_CHAR: {
             char val[2];
-            sprintf(val, "%c", value->val.char_value);
+            sprintf(val, "%c", value->val.charVal);
             str.append(val);
         } break;
         case TY_BOOLEAN: {
-            str.append(value->val.boolean_value ? "true" : "false");
+            str.append(value->val.boolVal ? "true" : "false");
         } break;
         case TY_ARRAY:
         case TY_RECORD: {
-            for (auto child : *value->val.children_value)
+            for (auto child : *value->val.childValVec)
                 str.append(print_rec(child, layer + 1));
         }
         default: {
@@ -48,7 +48,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
     if (ori_node == nullptr)
         str = "NULL";
     else {
-        switch (ori_node->node_type) {
+        switch (ori_node->nodeType) {
             case ND_PROGRAM: {
                 auto *node = (tree::Program *)ori_node;
                 str.append("Program: \n");
@@ -181,21 +181,21 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("args: ");
-                for (int i = 0; i < node->argsName.size(); i++) {
+                for (int i = 0; i < node->argNameVec.size(); i++) {
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("var_name: ");
-                    str.append(node->argsName[i]);
+                    str.append(node->argNameVec[i]);
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("arg_is_formal_parameter: ");
-                    str.append(print_rec(node->argsType[i], layer + 1));
-                    str.append(node->args_is_formal_parameters[i] ? " true" : " false");
+                    str.append(print_rec(node->argTypeVec[i], layer + 1));
+                    str.append(node->argFormalVec[i] ? " true" : " false");
                 }
                 if (node->retType != nullptr) {
                     str.append("\n");
                     str.append(print_tab(layer));
-                    str.append("return_type: ");
+                    str.append("returnType: ");
                     str.append(print_rec(node->retType, layer + 1));
                 }
                 if (node->define != nullptr) {
@@ -215,11 +215,11 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("left: ");
-                str.append(print_rec(node->left_value, layer + 1));
+                str.append(print_rec(node->leftVal, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("right: ");
-                str.append(print_rec(node->right_value, layer + 1));
+                str.append(print_rec(node->rightVal, layer + 1));
 
             } break;
 
@@ -287,12 +287,12 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("true_body: ");
-                str.append(print_rec(node->true_do, layer + 1));
-                if (node->false_do != nullptr) {
+                str.append(print_rec(node->trueBody, layer + 1));
+                if (node->falseBody != nullptr) {
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("false_body: ");
-                    str.append(print_rec(node->false_do, layer + 1));
+                    str.append(print_rec(node->falseBody, layer + 1));
                 }
             } break;
 
@@ -327,7 +327,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("bin_op: ");
-                str.append(getOpNameByID(node->op_code));
+                str.append(getOpNameByID(node->opcode));
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("operand 1: ");
@@ -338,8 +338,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append(print_rec(node->operand2, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
-                str.append("return_type: ");
-                str.append(print_rec(node->return_type, layer + 1));
+                str.append("returnType: ");
+                str.append(print_rec(node->returnType, layer + 1));
             } break;
 
             case ND_CALL_EXP: {
@@ -355,8 +355,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     str.append(print_rec(arg, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
-                str.append("return_type: ");
-                str.append(print_rec(node->return_type, layer + 1));
+                str.append("returnType: ");
+                str.append(print_rec(node->returnType, layer + 1));
             } break;
 
             case NX_CONST_EXP: {
@@ -373,8 +373,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     str.append(print_tab(layer));
                 else
                     str.append(print_tab(layer));
-                str.append("return_type: ");
-                str.append(print_rec(node->return_type, layer + 1));
+                str.append("returnType: ");
+                str.append(print_rec(node->returnType, layer + 1));
             } break;
 
             case ND_UNARY_EXP: {
@@ -382,15 +382,15 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("una_op: ");
-                str.append(getOpNameByID(node->op_code));
+                str.append(getOpNameByID(node->opcode));
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("operand: ");
                 str.append(print_rec(node->operand, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
-                str.append("return_type: ");
-                str.append(print_rec(node->return_type, layer + 1));
+                str.append("returnType: ");
+                str.append(print_rec(node->returnType, layer + 1));
             } break;
 
             case ND_VARIABLE_EXP: {
@@ -401,8 +401,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append(node->name);
                 str.append("\n");
                 str.append(print_tab(layer));
-                str.append("return_type: ");
-                str.append(print_rec(node->return_type, layer + 1));
+                str.append("returnType: ");
+                str.append(print_rec(node->returnType, layer + 1));
             } break;
 
             case ND_TYPE: {
