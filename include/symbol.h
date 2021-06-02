@@ -70,9 +70,9 @@ enum Val_Type { TY_INTEGER, TY_REAL, TY_CHAR, TY_BOOLEAN, TY_STRING, TY_ARRAY, T
 std::string getOpNameByID(int id);
 extern "C" void yyerror(const char *info);
 
-struct SymbolTableNode {
-    char Identify[ID_LEN];
-    char Type;
+struct symTabNode {
+    char id[ID_LEN];
+    char type;
 };
 
 #endif

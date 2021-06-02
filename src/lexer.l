@@ -6,157 +6,155 @@
 #include <cstring>
 extern "C" int yylex();
 extern "C" void yyerror(const char *s);
-int Conversion(char *Ident, unsigned type);
+int transform(char *id, unsigned type);
+int search(char *id);
 %}
 
-number          [0-9]
+delimiter       [\t\n\r ]
+digit           [0-9]
 char            [a-zA-Z]
 char_const      \'.\'
 string_const    \'.*\'
-Delim           [\t\n\r ]
-real            ({number}+\.{number}+)|(\.{number}+)
-integer         {number}+
-identify        {char}(_|{char}|{number})*
-ws              {Delim}+
+real            ({digit}+\.{digit}+)|(\.{digit}+)
+integer         {digit}+
+id              {char}(_|{char}|{digit})*
+ws              {delimiter}+
 comment         (\{.*\}|\(\*.*\*\)|\/\/.*)
 
 %%
 
-"("         {return Token_LeftP;}
-")"         {return Token_RightP;}
-"["         {return Token_LeftB;}
-"]"         {return Token_RightB;}
-"."         {return Token_DOT;}
-","         {return Token_COMMA;}
-":"         {return Token_COLON;}
-"+"         {return Token_PLUS;}
-"-"         {return Token_MINUS;}
-"*"         {return Token_MUL;}
-"/"         {return Token_DIV;}
-">"         {return Token_GT;}
-"<"         {return Token_LT;}
-"="         {return Token_EQUAL;}
-"<>"        {return Token_NE;}
-"<="        {return Token_LE;}
-">="        {return Token_GE;}
-":="        {return Token_ASSIGN;}
-"NOT"       {return Token_NOT;}
-"MOD"       {return Token_MOD;}
-"%"         {return Token_MOD;}
-".."        {return Token_DOTDOT;}
-";"         {return Token_SEMI;}
+"("         {return T_LP;}
+")"         {return T_RP;}
+"["         {return T_LB;}
+"]"         {return T_RB;}
+"."         {return T_DOT;}
+","         {return T_COMMA;}
+":"         {return T_COLON;}
+"+"         {return T_PLUS;}
+"-"         {return T_MINUS;}
+"*"         {return T_MUL;}
+"/"         {return T_DIV;}
+">"         {return T_GT;}
+"<"         {return T_LT;}
+"="         {return T_EQUAL;}
+"<>"        {return T_NE;}
+"<="        {return T_LE;}
+">="        {return T_GE;}
+":="        {return T_ASSIGN;}
+"NOT"       {return T_NOT;}
+"MOD"       {return T_MOD;}
+"%"         {return T_MOD;}
+".."        {return T_DOTDOT;}
+";"         {return T_SEMI;}
 
-"and"       {return Token_AND;}
-"array"     {return Token_ARRAY;}
-"begin"     {return Token_BEGIN;}
-"case"      {return Token_CASE;}
-"const"     {return Token_CONST;}
-"label"     {return Token_LABEL;}
-"do"        {return Token_DO;}
-"downto"    {return Token_DOWNTO;}
-"else"      {return Token_ELSE;}
-"end"       {return Token_END;}
-"for"       {return Token_FOR;}
-"function"  {return Token_FUNCTION;}
-"goto"      {return Token_GOTO;}
-"if"        {return Token_IF;}
-"in"        {return Token_IN;}
-"of"        {return Token_OF;}
-"or"        {return Token_OR;}
-"packed"    {return Token_PACKED;}
-"procedure" {return Token_PROCEDURE;}
-"program"   {return Token_PROGRAM;}
-"record"    {return Token_RECORD;}
-"repeat"    {return Token_REPEAT;}
-"set"       {return Token_SET;}
-"then"      {return Token_THEN;}
-"to"        {return Token_TO;}
-"type"      {return Token_TYPE;}
-"until"     {return Token_UNTIL;}
-"var"       {return Token_VAR;}
-"while"     {return Token_WHILE;}
-"with"      {return Token_WITH;}
+"and"       {return T_AND;}
+"array"     {return T_ARRAY;}
+"begin"     {return T_BEGIN;}
+"case"      {return T_CASE;}
+"const"     {return T_CONST;}
+"label"     {return T_LABEL;}
+"do"        {return T_DO;}
+"downto"    {return T_DOWNTO;}
+"else"      {return T_ELSE;}
+"end"       {return T_END;}
+"for"       {return T_FOR;}
+"function"  {return T_FUNCTION;}
+"goto"      {return T_GOTO;}
+"if"        {return T_IF;}
+"in"        {return T_IN;}
+"of"        {return T_OF;}
+"or"        {return T_OR;}
+"packed"    {return T_PACKED;}
+"procedure" {return T_PROCEDURE;}
+"program"   {return T_PROGRAM;}
+"record"    {return T_RECORD;}
+"repeat"    {return T_REPEAT;}
+"set"       {return T_SET;}
+"then"      {return T_THEN;}
+"to"        {return T_TO;}
+"type"      {return T_TYPE;}
+"until"     {return T_UNTIL;}
+"var"       {return T_VAR;}
+"while"     {return T_WHILE;}
+"with"      {return T_WITH;}
 
-"false"     {return Token_FALSE;}
-"true"      {return Token_TRUE;}
-"maxint"    {return Token_MAXINT;}
-"abs"       {return Token_ABS;}
-"chr"       {return Token_CHR;}
-"odd"       {return Token_ODD;}
-"ord"       {return Token_ORD;}
-"pred"      {return Token_PRED;}
-"sqr"       {return Token_SQR;}
-"sqrt"      {return Token_SQRT;}
-"succ"      {return Token_SUCC;}
-"write"     {return Token_WRITE;}
-"writeln"   {return Token_WRITELN;}
-"read"      {return Token_READ;}
-"boolean"   {return Token_BOOLEAN;}
-"char"      {return Token_CHAR;}
-"integer"   {return Token_INTEGER;}
-"real"      {return Token_REAL;}
-"string"    {return Token_STRING;}
+"false"     {return T_FALSE;}
+"true"      {return T_TRUE;}
+"maxint"    {return T_MAXINT;}
+"abs"       {return T_ABS;}
+"chr"       {return T_CHR;}
+"odd"       {return T_ODD;}
+"ord"       {return T_ORD;}
+"pred"      {return T_PRED;}
+"sqr"       {return T_SQR;}
+"sqrt"      {return T_SQRT;}
+"succ"      {return T_SUCC;}
+"write"     {return T_WRITE;}
+"writeln"   {return T_WRITELN;}
+"read"      {return T_READ;}
+"boolean"   {return T_BOOLEAN;}
+"char"      {return T_CHAR;}
+"integer"   {return T_INTEGER;}
+"real"      {return T_REAL;}
+"string"    {return T_STRING;}
 
-{ws}                {}
-{comment}           {}
-{identify}          { yylval.iVal = Conversion(yytext, 0); return SKET_ID; }
-{integer}           { yylval.iVal = atoi(yytext); return SKET_INTEGER; }
-{real}              { yylval.iVal = Conversion(yytext, 1); return SKET_REAL; }
+{id}                { yylval.iVal = transform(yytext, 0); return S_ID; }
 {char_const}        { 
-                      char CHaR[2];
-                      CHaR[0] = yytext[1];
-                      CHaR[1] = 0;
-                      yylval.iVal = Conversion(CHaR, 2); 
-                      return SKET_CHAR; 
+                      char character[2];
+                      character[0] = yytext[1];
+                      character[1] = 0;
+                      yylval.iVal = transform(character, 2); 
+                      return S_CHAR; 
                     }
 {string_const}      {
-                      char Stri[ID_LEN];
-                      int i = strlen(yytext);
-                      strcpy(Stri, yytext+1);      
-                      Stri[i-2] = 0;
-                      yylval.iVal = Conversion(Stri, 4);
-                      return SKET_STRING; 
+                      char string[ID_LEN];
+                      strcpy(string, yytext+1);      
+                      string[strlen(yytext)-2] = 0;
+                      yylval.iVal = transform(string, 4);
+                      return S_STRING; 
                     }
-.                   printf(" {%s %d} Not found the sybmol given.\n", yytext, yytext[0]);
+{integer}           { yylval.iVal = atoi(yytext); return S_INTEGER; }
+{real}              { yylval.iVal = transform(yytext, 1); return S_REAL; }
+{ws}                {}
+{comment}           {}
+.                   printf("Unexpected symbol found. %s %d\n", yytext, yytext[0]);
 %%
 
+int transform(char *id, unsigned type = -1) {
+    extern symTabNode symtab[];
+    extern int currentSymTabSize;
 
-int Conversion(char *Ident, unsigned type = -1) {
-    extern SymbolTableNode symboltable[];
-    extern int SymbolTableSizeCur;
-
-    //lower symbol
-
-    char IDLOWER[100];
-    strcpy(IDLOWER, Ident);
-    char *CHR = IDLOWER;
-
-    while(*CHR)
-    {
-        *CHR = tolower(*CHR);
-        CHR++;
+    // convert to lower case
+    char lower_id[100];
+    strcpy(lower_id, id);
+    for (char *p = lower_id; *p; p++) {
+        *p = tolower(*p);
     }
-
-    int result = -1;
-    int i=0;
-
-    while(i<SymbolTableSizeCur)
-    {
-        if((strcmp(Ident, symboltable[i].Identify) == 0)){
-            result = i;
-        }
-    }
-
+    int result = search(id);
 
     if (result == -1) {
-        strcpy(symboltable[SymbolTableSizeCur].Identify, CHR);      //if can not run, please change the CHR to Ident
-        symboltable[SymbolTableSizeCur].Type = type;
-        return SymbolTableSizeCur++;
+        strcpy(symtab[currentSymTabSize].id, id);
+        symtab[currentSymTabSize].type = type;
+        return currentSymTabSize++;
     } else {
         return result;
     }
-
 }
+int search(char *id) {
+    extern symTabNode symtab[];
+    extern int currentSymTabSize;
 
+    // convert to lower case
+    char lower_id[100];
+    strcpy(lower_id, id);
+    for (char *p = lower_id; *p; p++) {
+        *p = tolower(*p);
+    }
 
-
+    for (int i = 0; i < currentSymTabSize; i++) {
+        if (strcmp(id, symtab[i].id) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
