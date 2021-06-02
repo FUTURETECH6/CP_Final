@@ -3,6 +3,44 @@
 
 #include "codegen.h"
 
+llvm::Type *CodeGenContext::getLlvmType(tree::Type *type) {
+    if (type == nullptr) {
+        return llvm::Type::getVoidTy(MyContext);
+    }
+
+    switch (type->baseType) {
+        case TY_INTEGER: return llvm::Type::getInt32Ty(MyContext);
+        case TY_REAL: return llvm::Type::getFloatTy(MyContext);
+        case TY_CHAR: return llvm::Type::getInt8Ty(MyContext);
+        case TY_BOOLEAN: return llvm::Type::getInt1Ty(MyContext);
+
+        case TY_ARRAY:
+            return llvm::ArrayType::get(this->getLlvmType(type->childType[0]),
+                type->array_end - type->array_start + 1);
+
+        case TY_RECORD: {
+            std::vector<llvm::Type *> members;
+            for (tree::Type *child : type->childType) {
+                members.push_back(this->getLlvmType(child));
+            }
+            llvm::StructType *const rcd = llvm::StructType::create(MyContext,
+                type->name);  // StringRef Name
+            rcd->setBody(members);
+            return rcd;
+        }
+        default: {
+            CodeGenBlk *curBlk = this->getCurCodeGenBlk();
+            while (curBlk != nullptr) {
+                std::map<std::string, tree::Type *> typeTable = curBlk->typeMap;
+                if (typeTable.find(type->name) != typeTable.end())
+                    return this->getLlvmType(typeTable[type->name]);
+                curBlk = curBlk->parent;
+            }
+            exit(0);
+        }
+    }
+}
+
 //--------------------------------------------------------------
 
 llvm::Function *createPrintf(CodeGenContext *context) {

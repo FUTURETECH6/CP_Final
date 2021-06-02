@@ -27,7 +27,7 @@ LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 all: dirs progs
 
 progs: ${TARGET}
-${TARGET}: build/parser.o build/lexer.o build/tree.o build/symbol.o build/semantics.o build/codegen.o build/main.o
+${TARGET}: build/parser.o build/lexer.o build/tree.o build/treeprint.o build/symbol.o build/semantics.o build/codegen.o build/main.o
 	$(CXX) $^ ${LDFLAGS} -o $@
 
 build/parser.o: build/parser.cpp
@@ -35,6 +35,8 @@ build/parser.o: build/parser.cpp
 build/lexer.o: build/lexer.cpp build/parser.cpp
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 build/tree.o: src/tree.cpp include/tree.h
+	$(CXX) -o $@ -c $< ${CCFLAGS}
+build/treeprint.o: src/treeprint.cpp include/tree.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 build/symbol.o: src/symbol.cpp include/symbol.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
