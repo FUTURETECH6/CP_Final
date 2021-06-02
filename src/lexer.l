@@ -133,18 +133,23 @@ int Conversion(char *identify, unsigned TYPE = -1) {
     // convert to lower case
     char identifyOFLOWER[100];
     strcpy(identifyOFLOWER, identify);
-
-    for (char *t = identifyOFLOWER; *t; t++) {
+    char *t = identifyOFLOWER;
+    while(*t)
+    {
         *t = tolower(*t);
+        t++;
     }
 
     int result = -1;
-
-    for (int i = 0; i < PASCLsymboltableSIZECURR; i++) {
+    int i = 0;
+    while(i<PASCLsymboltableSIZECURR)
+    {
         if (strcmp(identify, PASCALiconTable[i].id) == 0) {
             result = i;
         }
+        i++;
     }
+
 
     if (result == -1) {
         strcpy(PASCALiconTable[PASCLsymboltableSIZECURR].id, identify);
