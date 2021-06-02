@@ -2,8 +2,8 @@
 #define SYMBOL_H
 #include <string>
 
-#define ID_LEN 50
-#define SYMTAB_SIZE 50
+#define ID_LENTH 50
+#define symbolTable_SIZE 50
 
 enum Op_Type {
     OP_ADD,
@@ -70,8 +70,8 @@ enum Val_Type { TY_INTEGER, TY_REAL, TY_CHAR, TY_BOOLEAN, TY_STRING, TY_ARRAY, T
 std::string getOpNameByID(int id);
 extern "C" void yyerror(const char *info);
 
-struct symTabNode {
-    char id[ID_LEN];
+struct symbolTableTreeNode {
+    char id[ID_LENTH];
     char type;
 };
 
