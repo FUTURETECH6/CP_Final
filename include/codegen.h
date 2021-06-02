@@ -2,6 +2,7 @@
 #define CODEGEN_H
 
 #include <iostream>
+#include <typeinfo>
 
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
@@ -26,7 +27,6 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
-#include <typeinfo>
 
 #include "tree.h"
 
@@ -34,68 +34,62 @@ static llvm::LLVMContext MyContext;
 
 llvm::Function *createPrintf(CodeGenContext *context);
 
-class CodeGenBlock {
+class CodeGenBlk {
   public:
     llvm::BasicBlock *block;
-    CodeGenBlock *parent;
-    std::map<std::string, tree::Exp *> const_locals;
-    std::map<std::string, tree::Type *> typedefs;
+    CodeGenBlk *parent;
+    std::map<std::string, tree::Exp *> constMap;
+    std::map<std::string, tree::Type *> typeMap;
 };
 
 class CodeGenContext {
   private:
-    std::stack<CodeGenBlock *> blocks;
-    llvm::Function *mainFunction;
-    llvm::Function *currentFunction;
+    std::stack<CodeGenBlk *> CodeGenStack;
+    llvm::Function *funcMain;
+    llvm::Function *funcCur;
 
   public:
-    //    llvm::LLVMContext myContext = new llvm;
     llvm::Module *module = new llvm::Module("main", MyContext);
-    std::map<llvm::Function *, llvm::Function *> parent;
+    std::map<llvm::Function *, llvm::Function *> parentMap;
     llvm::Function *printf;
-    std::map<std::string, tree::FunctionDef *> defined_functions;
+    std::map<std::string, tree::FunctionDef *> funcDefMap;
 
-    CodeGenContext() {}
+    llvm::Function *getCurFunc() { return this->funcCur; }
 
-    llvm::Function *getCurFunc() { return this->currentFunction; }
+    void setCurFunc(llvm::Function *func) { this->funcCur = func; }
 
-    void setCurFunc(llvm::Function *func) { this->currentFunction = func; }
-
-    llvm::Type *getLLVMTy(tree::Type *type) {
+    llvm::Type *getLlvmType(tree::Type *type) {
         if (type == nullptr) {
             return llvm::Type::getVoidTy(MyContext);
         }
 
-        switch (type->base_type) {
+        switch (type->baseType) {
             case TY_INTEGER: return llvm::Type::getInt32Ty(MyContext);
             case TY_REAL: return llvm::Type::getFloatTy(MyContext);
             case TY_CHAR: return llvm::Type::getInt8Ty(MyContext);
             case TY_BOOLEAN: return llvm::Type::getInt1Ty(MyContext);
 
-            case TY_ARRAY: {
-                return llvm::ArrayType::get(this->getLLVMTy(type->child_type[0]),
+            case TY_ARRAY:
+                return llvm::ArrayType::get(this->getLlvmType(type->childType[0]),
                     type->array_end - type->array_start + 1);
-            }
 
             case TY_RECORD: {
                 std::vector<llvm::Type *> members;
-                for (tree::Type *child : type->child_type) {
-                    members.push_back(this->getLLVMTy(child));
+                for (tree::Type *child : type->childType) {
+                    members.push_back(this->getLlvmType(child));
                 }
                 llvm::StructType *const rcd = llvm::StructType::create(MyContext,
                     type->name);  // StringRef Name
                 rcd->setBody(members);
                 return rcd;
             }
-
             default: {
-                CodeGenBlock *curBlock = this->getCurCodeGenBlock();
-                while (curBlock != nullptr) {
-                    std::map<std::string, tree::Type *> typeTable = curBlock->typedefs;
-                    if (typeTable.find(type->name) != typeTable.end()) {
-                        return this->getLLVMTy(typeTable[type->name]);
-                    }
-                    curBlock = curBlock->parent;
+                CodeGenBlk *curBlk = this->getCurCodeGenBlk();
+                while (curBlk != nullptr) {
+                    std::map<std::string, tree::Type *> typeTable = curBlk->typeMap;
+                    if (typeTable.find(type->name) != typeTable.end())
+                        return this->getLlvmType(typeTable[type->name]);
+                    curBlk = curBlk->parent;
                 }
                 exit(0);
             }
@@ -105,28 +99,28 @@ class CodeGenContext {
     void generateCode(tree::Program &root) {
         std::cout << "Generating code...\n";
 
-        std::vector<llvm::Type *> argTypes;  // 对于一个函数，llvm需要一个参数类型表
+        std::vector<llvm::Type *> argTypeVec;  // 对于一个函数，llvm需要一个参数类型表
         // 构造一个main函数的函数类型，返回值为void，定长参数
         llvm::FunctionType *funcType = llvm::FunctionType::get(
             llvm::Type::getVoidTy(MyContext),  // Type *Result: 返回值类型
-            llvm::makeArrayRef(argTypes),      // ArrayRef<Type *> Params: 参数列表
+            llvm::makeArrayRef(argTypeVec),    // ArrayRef<Type *> Params: 参数列表
             false);                            // bool isVarArg: 是否为变长参数
         // 利用构造的main函数函数类型，构造一个main函数
-        this->mainFunction = llvm::Function::Create(funcType,  // FunctionType *Ty: 函数类型
-            llvm::GlobalValue::InternalLinkage,                // LinkageTypes Linkage
-            llvm::Twine("main"),                               // const Twine &N
-            this->module);                                     // Module *M
+        this->funcMain = llvm::Function::Create(funcType,  // FunctionType *Ty: 函数类型
+            llvm::GlobalValue::InternalLinkage,            // LinkageTypes Linkage
+            llvm::Twine("main"),                           // const Twine &N
+            this->module);                                 // Module *M
         // 主程序入口（main）
         llvm::BasicBlock *basBlock =
             llvm::BasicBlock::Create(MyContext,  // LLVMContext &Context
                 llvm::Twine("entry"),            // const Twine &Name
-                this->mainFunction,              // Function *Parent
+                this->funcMain,                  // Function *Parent
                 nullptr);                        // BasicBlock *InsertBefore
 
         this->printf = createPrintf(this);
 
         this->pushBlock(basBlock);  // 将程序入口（main函数的block）压栈
-        this->currentFunction = this->mainFunction;
+        this->funcCur = this->funcMain;
         root.codeGen(this);
         llvm::ReturnInst::Create(MyContext,  // LLVMContext &Context
             this->getCurBlock());            // BasicBlock *InsertAtEnd
@@ -153,37 +147,37 @@ class CodeGenContext {
             llvm::EngineBuilder(std::unique_ptr<llvm::Module>(this->module)).create();
         exeEngine->finalizeObject();  // ensure the module is fully processed and is usable.
         llvm::ArrayRef<llvm::GenericValue> noArgs;
-        llvm::GenericValue value = exeEngine->runFunction(this->mainFunction,  //  Function *f
+        llvm::GenericValue value = exeEngine->runFunction(this->funcMain,  //  Function *f
             noArgs);  //  ArrayRef<GenericValue>  ArgValues
         std::cout << "Code run.\n";
         return value;
     }
 
-    llvm::BasicBlock *getCurBlock() { return blocks.top()->block; }
+    llvm::BasicBlock *getCurBlock() { return CodeGenStack.top()->block; }
 
-    CodeGenBlock *getCurCodeGenBlock() { return blocks.top(); }
+    CodeGenBlk *getCurCodeGenBlk() { return CodeGenStack.top(); }
 
     void pushBlock(llvm::BasicBlock *block) {
         std::cout << "pushing..." << std::endl;
-        blocks.push(new CodeGenBlock());
-        blocks.top()->block = block;
+        CodeGenStack.push(new CodeGenBlk());
+        CodeGenStack.top()->block = block;
     }
     void popBlock() {
         std::cout << "poping..." << std::endl;
-        CodeGenBlock *top = blocks.top();
-        blocks.pop();
+        CodeGenBlk *top = CodeGenStack.top();
+        CodeGenStack.pop();
         delete top;
     }
 
     void insertConst(std::string name, tree::Exp *const_v) {
-        blocks.top()->const_locals[name] = const_v;
+        CodeGenStack.top()->constMap[name] = const_v;
     }
 
     llvm::Value *getValue(std::string name) {
         std::cout << "Start get value for " << name << std::endl;
 
         llvm::Value *ret;
-        if ((ret = this->currentFunction->getValueSymbolTable()->lookup(name)) !=
+        if ((ret = this->funcCur->getValueSymbolTable()->lookup(name)) !=
             nullptr) {  // 在 curFunc 的局部变量中找到
             std::cout << "[Success] Found local variable: " << name << std::endl;
             return ret;

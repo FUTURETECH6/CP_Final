@@ -158,7 +158,7 @@ void CallExp::addArgs(Exp *exp) {
 
 std ::string print_rec(Value *value, int layer) {
     std::string str;
-    switch (value->base_type) {
+    switch (value->baseType) {
         case TY_INTEGER: {
             char val[10];
             sprintf(val, "%d", value->val.integer_value);
@@ -584,7 +584,7 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
 
             case ND_TYPE: {
                 auto *node = (Type *)ori_node;
-                switch (node->base_type) {
+                switch (node->baseType) {
                     case TY_INTEGER: {
                         str.append("integer");
                     } break;
@@ -605,13 +605,13 @@ std::string print_rec(Base *ori_node, int layer, bool noNext = true) {
                         str.append(", \"end_index\": ");
                         sprintf(num, "%d", node->array_end);
                         str.append(num);
-                        str.append(", \"child_type\": ");
-                        str.append(print_rec(node->child_type[0], layer + 1));
+                        str.append(", \"childType\": ");
+                        str.append(print_rec(node->childType[0], layer + 1));
                     } break;
                     case TY_RECORD: {
                         str.append(print_tab(layer));
-                        str.append("\"type\":\"record\",\"child_type\": ");
-                        for (auto child : node->child_type) {
+                        str.append("\"type\":\"record\",\"childType\": ");
+                        for (auto child : node->childType) {
                             str.append("\n");
                             str.append(print_tab(layer));
                             str.append("name: ");
@@ -696,18 +696,18 @@ Type *tree::findType(const std::string &type_name, Base *node) {
 Type *tree::copyType(Type *origin) {
     auto *copy        = new Type();
     copy->name        = origin->name;
-    copy->base_type   = origin->base_type;
+    copy->baseType    = origin->baseType;
     copy->array_start = origin->array_start;
     copy->array_end   = origin->array_end;
-    copy->child_type.clear();
-    for (Type *iter : origin->child_type)
-        copy->child_type.push_back(copyType(iter));
+    copy->childType.clear();
+    for (Type *iter : origin->childType)
+        copy->childType.push_back(copyType(iter));
     return copy;
 }
 
 bool tree::isSameType(Type *type1, Type *type2) {
-    if (type1->base_type == type2->base_type)
-        switch (type1->base_type) {
+    if (type1->baseType == type2->baseType)
+        switch (type1->baseType) {
             case TY_INTEGER:
             case TY_CHAR:
             case TY_REAL:
@@ -715,12 +715,12 @@ bool tree::isSameType(Type *type1, Type *type2) {
             case TY_ARRAY:
                 if (type1->array_end - type2->array_start ==
                     type2->array_end - type2->array_start)
-                    return isSameType(type1->child_type[0], type2->child_type[0]);
+                    return isSameType(type1->childType[0], type2->childType[0]);
                 break;
             case TY_RECORD:
-                if (type1->child_type.size() == type2->child_type.size()) {
-                    for (int i = 0; i < type1->child_type.size(); i++)
-                        if (!isSameType(type1->child_type[i], type2->child_type[i]))
+                if (type1->childType.size() == type2->childType.size()) {
+                    for (int i = 0; i < type1->childType.size(); i++)
+                        if (!isSameType(type1->childType[i], type2->childType[i]))
                             return false;
                     return true;
                 }

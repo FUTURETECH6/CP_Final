@@ -24,8 +24,8 @@ llvm::Function *createPrintf(CodeGenContext *context) {
 int getRecordIndex(
     tree::Type *recType, std::string name)  // 对于记录类型，寻找某一个变量的 index
 {
-    for (int i = 0; i < recType->child_type.size(); i++) {
-        if (name == recType->child_type[i]->name) {
+    for (int i = 0; i < recType->childType.size(); i++) {
+        if (name == recType->childType[i]->name) {
             return i;
         }
     }
@@ -114,8 +114,8 @@ llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
     if (this->value->node_type == NX_CONST_EXP) {  // 如果值是常量
         tree::ConstantExp *opLeft = static_cast<ConstantExp *>(this->value);  //
         llvm::Value *alloc        = new llvm::AllocaInst(  // 为常量分配空间
-            context->getLLVMTy(opLeft->return_type),  // Type *Ty                 // 类型
-            0,                                        // unsigned AddrSpace
+            context->getLlvmType(opLeft->return_type),  // Type *Ty                 // 类型
+            0,                                          // unsigned AddrSpace
             llvm::Twine(this->name),  // const Twine &Name        // 常量名称
             context->getCurBlock());  // BasicBlock *InsertAtEnd
         llvm::Value *store        = new llvm::StoreInst(  // 将常量的值赋到空间中
@@ -134,7 +134,7 @@ llvm::Value *tree::ConstDef::codeGen(CodeGenContext *context) {
 }
 
 llvm::Value *tree::TypeDef::codeGen(CodeGenContext *context) {
-    context->getCurCodeGenBlock()->typedefs[this->name] = this->type;  // 定义类型
+    context->getCurCodeGenBlk()->typeMap[this->name] = this->type;  // 定义类型
     return nullptr;
 }
 
@@ -145,12 +145,12 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
     if (this->is_global) {  // 如果是全局变量
         std::cout << "|--- Global variable" << std::endl;
 
-        if (this->type->base_type == TY_ARRAY) {  // 如果是数组
+        if (this->type->baseType == TY_ARRAY) {  // 如果是数组
             std::cout << " |---|--- Array variable" << std::endl;
 
             std::vector<llvm::Constant *> vec = std::vector<llvm::Constant *>();
             llvm::Constant *eleOfArr;
-            switch (this->type->child_type[0]->base_type) {  // 对全局变量进行初始化
+            switch (this->type->childType[0]->baseType) {  // 对全局变量进行初始化
                 case TY_INTEGER:
                     eleOfArr =
                         llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true);
@@ -177,20 +177,20 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
             }
 
             llvm::ArrayType *arrType =
-                static_cast<llvm::ArrayType *>(context->getLLVMTy(this->type));
+                static_cast<llvm::ArrayType *>(context->getLlvmType(this->type));
             llvm::Constant *arrConst = llvm::ConstantArray::get(arrType, vec);
             alloc = new llvm::GlobalVariable(*context->module,  // Module &M
-                context->getLLVMTy(this->type),  // Type *Ty               // 全局变量的类型
-                false,                           // bool isConstant        // 是否常量
+                context->getLlvmType(this->type),  // Type *Ty               // 全局变量的类型
+                false,                             // bool isConstant        // 是否常量
                 llvm::GlobalValue::ExternalLinkage,  // LinkageTypes Linkage
                 arrConst,  // Constant *Initializer  // 全局变量初始化为 0
                 llvm::Twine(this->name));  // const Twine &Name      // 变量名称
-        } else if (this->type->base_type == TY_RECORD) {
+        } else if (this->type->baseType == TY_RECORD) {
             std::cout << "[Warning] Uncomplete feature for gloable record" << std::endl;
             exit(0);
         } else {  // 不是数组
             llvm::Constant *arrConst;
-            switch (this->type->base_type) {
+            switch (this->type->baseType) {
                 case TY_INTEGER:
                     arrConst =
                         llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true);
@@ -209,12 +209,13 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
                 default:;
             }
 
-            alloc = new llvm::GlobalVariable(*context->module, context->getLLVMTy(this->type),
-                false, llvm::GlobalValue::ExternalLinkage, arrConst, llvm::Twine(this->name));
+            alloc = new llvm::GlobalVariable(*context->module,
+                context->getLlvmType(this->type), false, llvm::GlobalValue::ExternalLinkage,
+                arrConst, llvm::Twine(this->name));
         }
-    } else {                                 // 局部变量
-        alloc = new llvm::AllocaInst(        // 为局部变量分配地址
-            context->getLLVMTy(this->type),  // 类型
+    } else {                                   // 局部变量
+        alloc = new llvm::AllocaInst(          // 为局部变量分配地址
+            context->getLlvmType(this->type),  // 类型
             0,
             llvm::Twine(this->name),  // 常量名称
             context->getCurBlock());
@@ -225,21 +226,21 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
 
 llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     std::cout << "Function defining: " << this->name << std::endl;
-    context->defined_functions[this->name] = this;
+    context->funcDefMap[this->name] = this;
 
     std::vector<llvm::Type *> argTy;
     for (int i = 0; i < this->args_type.size(); i++) {
         if (this->args_is_formal_parameters[i]) {  // 参数传递 引用/值
             argTy.push_back(llvm::Type::getInt32PtrTy(MyContext));
         } else {
-            argTy.push_back(context->getLLVMTy(this->args_type[i]));
+            argTy.push_back(context->getLlvmType(this->args_type[i]));
         }
     }
 
     llvm::FunctionType *funcType = llvm::FunctionType::get(
-        context->getLLVMTy(this->rtn_type),  // Type *Ty                 // 函数返回值类型
-        llvm::makeArrayRef(argTy),           // ArrayRef<Type *> Params  // 参数类型
-        false);                              // bool isVarArg            // 定长
+        context->getLlvmType(this->rtn_type),  // Type *Ty                 // 函数返回值类型
+        llvm::makeArrayRef(argTy),             // ArrayRef<Type *> Params  // 参数类型
+        false);                                // bool isVarArg            // 定长
     llvm::Function *func =
         llvm::Function::Create(funcType, llvm::GlobalValue::InternalLinkage,
             llvm::Twine(this->name),  // 函数名
@@ -251,7 +252,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
     llvm::Function *oldFunc = context->getCurFunc();
     context->setCurFunc(func);
     llvm::BasicBlock *oldBlock = context->getCurBlock();
-    context->parent[func]      = oldFunc;
+    context->parentMap[func]   = oldFunc;
 
     context->pushBlock(block);
 
@@ -263,7 +264,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
             ty = llvm::Type::getInt32PtrTy(MyContext);
             std::cout << "|--- Formal argument define: " << this->args_name[i] << std::endl;
         } else {
-            ty = context->getLLVMTy(this->args_type[i]);
+            ty = context->getLlvmType(this->args_type[i]);
             std::cout << "|--- Argument define: " << this->args_name[i] << std::endl;
         }
         llvm::Value *alloc = new llvm::AllocaInst(  // 为参数分配空间
@@ -282,7 +283,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
 
     if (this->rtn_type != nullptr) {
         new llvm::AllocaInst(  // 为返回值分配地址
-            context->getLLVMTy(this->rtn_type), 0, llvm::Twine(this->name),
+            context->getLlvmType(this->rtn_type), 0, llvm::Twine(this->name),
             context->getCurBlock());
         std::cout << "|--- Function return value declaration" << std::endl;
     }
@@ -456,8 +457,8 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                         arrIdx[1]        = llvm::ConstantInt::get(  // index
                             MyContext, llvm::APInt(32, index, true));
                         llvm::Value *ptr = llvm::GetElementPtrInst::Create(
-                            context->getLLVMTy(node->operand1->return_type),  // 类型
-                            context->getValue(op2->name),                     // 值
+                            context->getLlvmType(node->operand1->return_type),  // 类型
+                            context->getValue(op2->name),                       // 值
                             arrIdx,           // 记录所存在的序号
                             llvm::Twine(""),  // 名称
                             context->getCurBlock());
@@ -659,7 +660,7 @@ llvm::Value *tree::ForStm::codeGen(CodeGenContext *context) {
     // 循环变量的更新
     tree::BinaryExp *update;
     tree::Value *tmp               = new tree::Value();
-    tmp->base_type                 = TY_INTEGER;
+    tmp->baseType                  = TY_INTEGER;
     tmp->val.integer_value         = this->step;  // 1 为 to ， -1 为 downto
     tree::ConstantExp *int1        = new tree::ConstantExp(tmp);
     update                         = new tree::BinaryExp(  // i + 1 或 i - 1
@@ -733,18 +734,18 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
                 llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
                 llvm::Twine(""), context->getCurBlock());
         case OP_OPPO:
-            if (this->operand->return_type->base_type == TY_INTEGER) {  // -m = 0 - m
+            if (this->operand->return_type->baseType == TY_INTEGER) {  // -m = 0 - m
                 return llvm::BinaryOperator::Create(llvm::Instruction::Sub,
                     llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
                     this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
-            } else if (this->operand->return_type->base_type == TY_REAL) {
+            } else if (this->operand->return_type->baseType == TY_REAL) {
                 return llvm::BinaryOperator::Create(llvm::Instruction::FSub,
                     llvm::ConstantFP::get(MyContext, llvm::APFloat(0.)),
                     this->operand->codeGen(context), llvm::Twine(""), context->getCurBlock());
             }
             break;
         case OP_ABS:
-            if (this->operand->return_type->base_type == TY_INTEGER) {
+            if (this->operand->return_type->baseType == TY_INTEGER) {
                 llvm::Value *cond          = llvm::CmpInst::Create(llvm::Instruction::ICmp,
                     llvm::CmpInst::ICMP_SGT,
                     llvm::ConstantInt::get(llvm::Type::getInt32Ty(MyContext), 0, true),
@@ -773,7 +774,7 @@ llvm::Value *tree::UnaryExp::codeGen(CodeGenContext *context) {
                 context->popBlock();
                 context->pushBlock(mergeBlock);  // mergeBlock
                 return ret;
-            } else if (this->operand->return_type->base_type == TY_REAL) {
+            } else if (this->operand->return_type->baseType == TY_REAL) {
                 llvm::Value *cond          = llvm::CmpInst::Create(llvm::Instruction::ICmp,
                     llvm::CmpInst::ICMP_SGT,
                     llvm::ConstantFP::get(MyContext, llvm::APFloat(0.)),
@@ -838,8 +839,9 @@ llvm::Value *tree::BinaryExp::codeGen(CodeGenContext *context) {
             arrIdx[1]           = llvm::ConstantInt::get(            // index
                 MyContext, llvm::APInt(32, index, true));  // create member_index
             llvm::Value *memPtr = llvm::GetElementPtrInst::Create(
-                context->getLLVMTy(this->operand1->return_type), context->getValue(op2->name),
-                arrIdx, llvm::Twine(""), context->getCurBlock());
+                context->getLlvmType(this->operand1->return_type),
+                context->getValue(op2->name), arrIdx, llvm::Twine(""),
+                context->getCurBlock());
             return new llvm::LoadInst(memPtr, llvm::Twine(""), false, context->getCurBlock());
         } else {
             std::cout << "[Error] Wrong member variable for record" << std::endl;
@@ -997,8 +999,8 @@ llvm::Value *tree::CallExp::codeGen(CodeGenContext *context) {
                         arrIdx[1]        = llvm::ConstantInt::get(  // index
                             MyContext, llvm::APInt(32, index, true));
                         llvm::Value *ptr = llvm::GetElementPtrInst::Create(
-                            context->getLLVMTy(node->operand1->return_type),  // 类型
-                            context->getValue(op2->name),                     // 值
+                            context->getLlvmType(node->operand1->return_type),  // 类型
+                            context->getValue(op2->name),                       // 值
                             arrIdx,           // 记录所存在的序号
                             llvm::Twine(""),  // 名称
                             context->getCurBlock());
@@ -1057,7 +1059,7 @@ llvm::Value *tree::Type::codeGen(CodeGenContext *context) {
 }
 
 llvm::Value *tree::Value::codeGen(CodeGenContext *context) {
-    switch (this->base_type) {
+    switch (this->baseType) {
         case TY_INTEGER:
             return llvm::ConstantInt::get(
                 llvm::Type::getInt32Ty(MyContext), this->val.integer_value, true);

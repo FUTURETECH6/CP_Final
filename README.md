@@ -4,6 +4,7 @@ For building:
 
 ```bash
 sudo apt install -y llvm-8 llvm-8-dev llvm-8-tools build-essential
+sudo apt install -y clang-8  # Unnecessary if you use gnu-g++ as CXX
 ```
 
 For formatting:

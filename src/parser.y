@@ -115,16 +115,16 @@ const_expr_list:      const_expr_list S_ID T_EQUAL const_value T_SEMI           
                     | S_ID T_EQUAL const_value T_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(symtab[$1].id, (Exp*)$3));}
                     ;
 
-const_value:          S_INTEGER                         {Value* value= new Value; value->base_type = TY_INTEGER; value->val.integer_value = $1; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
-                    | S_REAL                            {Value* value= new Value; value->base_type = TY_REAL; value->val.real_value = atof(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_REAL);}
-                    | S_CHAR                            {Value* value= new Value; value->base_type = TY_CHAR; value->val.char_value = symtab[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_CHAR);}
-                    | S_STRING                          {Value* value= new Value; value->base_type = TY_STRING; value->val.string_value = new string(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_STRING);}
+const_value:          S_INTEGER                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = $1; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
+                    | S_REAL                            {Value* value= new Value; value->baseType = TY_REAL; value->val.real_value = atof(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_REAL);}
+                    | S_CHAR                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.char_value = symtab[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_CHAR);}
+                    | S_STRING                          {Value* value= new Value; value->baseType = TY_STRING; value->val.string_value = new string(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_STRING);}
                     | sys_con                           {$$ = $1;}
                     ;
 
-sys_con:              T_TRUE                            {Value* value= new Value; value->base_type = TY_BOOLEAN; value->val.boolean_value = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | T_FALSE                           {Value* value= new Value; value->base_type = TY_BOOLEAN; value->val.boolean_value = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | T_MAXINT                          {Value* value= new Value; value->base_type = TY_INTEGER; value->val.integer_value = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_INTEGER);}
+sys_con:              T_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
+                    | T_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
+                    | T_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_INTEGER);}
                     ;
 
 type_part:            T_TYPE type_decl_list             {$$ = $2; tmp = *$$;}
@@ -158,17 +158,17 @@ simple_type_decl:     sys_type                          {$$ = $1;} // Type
                                                         }
                     ;
 
-array_type_decl:      T_ARRAY T_LB simple_type_decl T_RB T_OF type_decl         {$$ = $3; $$->child_type.push_back($6);}
+array_type_decl:      T_ARRAY T_LB simple_type_decl T_RB T_OF type_decl         {$$ = $3; $$->childType.push_back($6);}
                     ;
 
-record_type_decl:     T_RECORD field_decl_list T_END    {$$ = new Type(TY_RECORD); $$->child_type = *$2;} // TODO TY_ROCORD type
+record_type_decl:     T_RECORD field_decl_list T_END    {$$ = new Type(TY_RECORD); $$->childType = *$2;} // TODO TY_ROCORD type
                     ;
 
 field_decl_list:      field_decl_list field_decl        {$$ = $1; $$->insert($$->end(), $2->begin(), $2->end());} // std::vector<Type *>
                     | field_decl                        {$$ = new std::vector<Type *>(); $$->insert($$->end(), $1->begin(), $1->end());} 
                     ;
 
-field_decl:           name_list T_COLON type_decl T_SEMI {$$ = new std::vector<Type *>(); for(auto iter : *$1) {Type * tmp = new Type(); tmp->name = iter; tmp->child_type.push_back($3); $$->push_back(tmp);}} // std::vector<Type *>
+field_decl:           name_list T_COLON type_decl T_SEMI {$$ = new std::vector<Type *>(); for(auto iter : *$1) {Type * tmp = new Type(); tmp->name = iter; tmp->childType.push_back($3); $$->push_back(tmp);}} // std::vector<Type *>
                 ;   
 
 name_list:            name_list T_COMMA S_ID            {$$ = $1; $$->push_back(symtab[$3].id);}
@@ -279,7 +279,7 @@ repeat_stmt:          T_REPEAT stmt_list T_UNTIL expression      {$$ = new Repea
 while_stmt:           T_WHILE expression T_DO stmt      {$$ = new WhileStm($2); ((WhileStm*)$$)->addLoop($4);}
                     ;
 
-for_stmt:             T_FOR S_ID T_ASSIGN expression direction expression T_DO stmt {$$ = new ForStm(symtab[$2].id, $4, $6, $5->base_type); ((ForStm*)$$)->addLoop($8);}
+for_stmt:             T_FOR S_ID T_ASSIGN expression direction expression T_DO stmt {$$ = new ForStm(symtab[$2].id, $4, $6, $5->baseType); ((ForStm*)$$)->addLoop($8);}
                     ; // iter Exp int Exp Body
 
 direction:            T_TO                              {$$ = new Type(1);}

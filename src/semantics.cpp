@@ -8,59 +8,59 @@ void yyerror(Base *err_node, const char *info) {
 }
 
 bool isTypeBoolean(Type *type) {
-    return type->base_type == TY_BOOLEAN;
+    return type->baseType == TY_BOOLEAN;
 }
 
 bool isTypeInt(Type *type) {
-    return type->base_type == TY_INTEGER;
+    return type->baseType == TY_INTEGER;
 }
 
 bool isTypeReal(Type *type) {
-    return type->base_type == TY_REAL;
+    return type->baseType == TY_REAL;
 }
 
 bool isTypeChar(Type *type) {
-    return type->base_type == TY_CHAR;
+    return type->baseType == TY_CHAR;
 }
 
 bool isTypeRecord(Type *type) {
-    return type->base_type == TY_RECORD;
+    return type->baseType == TY_RECORD;
 }
 
 bool isTypeArray(Type *type) {
-    return type->base_type == TY_ARRAY;
+    return type->baseType == TY_ARRAY;
 }
 
 bool isTypeString(Type *type) {
-    return type->base_type == TY_STRING;
+    return type->baseType == TY_STRING;
 }
 
 bool canFillTypeWithValue(Type *type, Value *value) {
-    switch (type->base_type) {
-        case TY_REAL: return value->base_type == TY_INTEGER || value->base_type == TY_REAL;
+    switch (type->baseType) {
+        case TY_REAL: return value->baseType == TY_INTEGER || value->baseType == TY_REAL;
         case TY_INTEGER:
         case TY_CHAR:
-        case TY_BOOLEAN: return value->base_type == type->base_type;
-        case TY_STRING: return value->base_type == TY_CHAR || value->base_type == TY_STRING;
+        case TY_BOOLEAN: return value->baseType == type->baseType;
+        case TY_STRING: return value->baseType == TY_CHAR || value->baseType == TY_STRING;
         case TY_ARRAY:
-            if (value->base_type != TY_ARRAY)
+            if (value->baseType != TY_ARRAY)
                 return false;
             if (type->array_end - type->array_start + 1 !=
                 (*(value->val.children_value)).size())
                 return false;
             for (int i = 0; i <= type->array_end - type->array_start; i++)
                 if (!canFillTypeWithValue(
-                        type->child_type[i], (*(value->val.children_value))[i]))
+                        type->childType[i], (*(value->val.children_value))[i]))
                     return false;
             return true;
         case TY_RECORD:
-            if (value->base_type != TY_RECORD)
+            if (value->baseType != TY_RECORD)
                 return false;
-            if (type->child_type.size() != (*(value->val.children_value)).size())
+            if (type->childType.size() != (*(value->val.children_value)).size())
                 return false;
-            for (int i = 0; i < type->child_type.size(); i++)
+            for (int i = 0; i < type->childType.size(); i++)
                 if (!canFillTypeWithValue(
-                        type->child_type[0], (*(value->val.children_value))[i]))
+                        type->childType[0], (*(value->val.children_value))[i]))
                     return false;
             return true;
         default: return false;
@@ -69,23 +69,22 @@ bool canFillTypeWithValue(Type *type, Value *value) {
 
 Type *generateTypeByValue(Value *value) {
     Type *type;
-    switch (value->base_type) {
+    switch (value->baseType) {
         case TY_INTEGER:
         case TY_REAL:
         case TY_CHAR:
         case TY_BOOLEAN:
-        case TY_STRING: type = new Type(value->base_type); break;
+        case TY_STRING: type = new Type(value->baseType); break;
         case TY_RECORD:
-            type = new Type(value->base_type);
+            type = new Type(value->baseType);
             for (auto val : (*(value->val.children_value)))
-                type->child_type.push_back(generateTypeByValue(val));
+                type->childType.push_back(generateTypeByValue(val));
             break;
         case TY_ARRAY:
             type              = new Type(TY_ARRAY);
             type->array_start = 0;
             type->array_end   = (*(value->val.children_value)).size() - 1;
-            type->child_type.push_back(
-                generateTypeByValue((*(value->val.children_value))[0]));
+            type->childType.push_back(generateTypeByValue((*(value->val.children_value))[0]));
             break;
         default: type = nullptr;
     }
@@ -93,18 +92,18 @@ Type *generateTypeByValue(Value *value) {
 }
 
 Type *findChildType(Type *pType, const std::string &basic_string) {
-    if (pType->base_type != TY_RECORD)
+    if (pType->baseType != TY_RECORD)
         return nullptr;
-    for (Type *child : pType->child_type)
+    for (Type *child : pType->childType)
         if (child->name == basic_string)
             return child;
     return nullptr;
 }
 
 bool canFindChild(Type *pType, const std::string &basic_string) {
-    if (pType->base_type != TY_RECORD)
+    if (pType->baseType != TY_RECORD)
         return false;
-    for (Type *child : pType->child_type)
+    for (Type *child : pType->childType)
         if (child->name == basic_string)
             return true;
     return false;
@@ -951,7 +950,7 @@ bool BinaryExp::checkSemantics() {
                     isTypeString(operand1->return_type)) {
                     if (isTypeInt(operand2->return_type) ||
                         isTypeChar(operand2->return_type)) {
-                        return_type = copyType(operand1->return_type->child_type[0]);
+                        return_type = copyType(operand1->return_type->childType[0]);
                     } else {
                         char info[200];
                         sprintf(info, "Semantics Error: The index must be integer or char.");

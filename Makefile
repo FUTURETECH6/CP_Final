@@ -21,7 +21,7 @@ CXX = $(LLVM_CLANG)
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
-CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags) -g -std=c++11 ${INCLUDE}
+CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE}
 LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs
@@ -77,3 +77,13 @@ test: all
 fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
 	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}
+
+tmp_cxy_test: fmt clean test
+	@echo
+	@sed -n 168p 'test/fibonacci(output).txt'
+	@echo
+	@sed -n '135,136p' 'test/gcd(output).txt'
+	@echo
+	@sed -n '211,212p' 'test/global_var(output).txt'
+	@echo
+	@sed -n 245p 'test/nested_if(output).txt'

@@ -60,13 +60,13 @@ namespace tree {
     class Type : public Base {
       public:
         std::string name;  // use what name to find this value, may be empty
-        int base_type;     // 0: int 1: real 2: char 3: bool 5: array 6: record
+        int baseType;      // 0: int 1: real 2: char 3: bool 5: array 6: record
         int array_start = 0,
             array_end   = 0;  // the index for array. useless if the type is not an array
-        std::vector<Type *> child_type;  // a list of the type of children, there is only one
-                                         // child if the type is array
+        std::vector<Type *> childType;  // a list of the type of children, there is only one
+                                        // child if the type is array
         Type() : Base(ND_TYPE) {}
-        Type(int _base_type) : Base(ND_TYPE), base_type(_base_type) {}
+        Type(int _base_type) : Base(ND_TYPE), baseType(_base_type) {}
         llvm::Type *toLLVMType(CodeGenContext &context);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override { return false; }
@@ -388,7 +388,7 @@ namespace tree {
 
     class Value {
       public:
-        int base_type;  // 0: int 1: real 2: char 3: boolean 5: array 6: record
+        int baseType;  // 0: int 1: real 2: char 3: boolean 5: array 6: record
         union return_value {
             int integer_value;
             float real_value;
