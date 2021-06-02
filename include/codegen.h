@@ -56,9 +56,10 @@ class CodeGenContext {
     llvm::Module *pModule = new llvm::Module("main", globalContext);
     std::map<llvm::Function *, llvm::Function *> parentMap;
     llvm::Function *printf;
-    std::map<std::string, tree::FunctionDef *> funcDefMap;
+    std::map<std::string, tree::FuncDef *> funcDefMap;
 
     void generateCode(tree::Program &root, std::string file = "a.bc");
+    void runCode();
     llvm::Type *getLlvmType(tree::Type *type);
     llvm::Value *getValue(std::string name);
 

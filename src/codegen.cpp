@@ -47,8 +47,8 @@ llvm::Type *CodeGenContext::getLlvmType(tree::Type *type) {
         case TY_BOOLEAN: return llvm::Type::getInt1Ty(globalContext);
 
         case TY_ARRAY:
-            return llvm::ArrayType::get(this->getLlvmType(type->childType[0]),
-                type->array_end - type->array_start + 1);
+            return llvm::ArrayType::get(
+                this->getLlvmType(type->childType[0]), type->indexEnd - type->indexStart + 1);
 
         case TY_RECORD: {
             std::vector<llvm::Type *> members;
@@ -115,6 +115,18 @@ void CodeGenContext::generateCode(tree::Program &root, std::string file) {
     llvm::raw_fd_ostream os(file, errCode, llvm::sys::fs::F_None);
     llvm::WriteBitcodeToFile(*this->pModule, os);
     os.flush();
+}
+
+void CodeGenContext::runCode() {
+    std::cout << "Running code...\n";
+
+    llvm::ExecutionEngine *exeEngine =
+        llvm::EngineBuilder(std::unique_ptr<llvm::Module>(this->pModule)).create();
+    exeEngine->finalizeObject();  // ensure the module is fully processed and is usable.
+    llvm::ArrayRef<llvm::GenericValue> noArgs;
+    exeEngine->runFunction(this->funcMain,  //  Function *f
+        noArgs);                            //  ArrayRef<GenericValue>  ArgValues
+    std::cout << "Code run.\n";
 }
 
 /* Public Method */
@@ -197,7 +209,7 @@ llvm::Value *tree::Program::codeGen(CodeGenContext *context) {
             varDef->is_global = true;
             lastDef           = varDef->codeGen(context);
         }
-        for (tree::FunctionDef *&funcDef : this->define->funcDef) {
+        for (tree::FuncDef *&funcDef : this->define->funcDef) {
             std::cout << "[Success] Program defined a function: " << funcDef->name
                       << std::endl;
             lastDef = funcDef->codeGen(context);
@@ -286,7 +298,7 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
                     exit(0);
             }
 
-            for (int i = 0; i < this->type->array_end - this->type->array_start + 1; i++) {
+            for (int i = 0; i < this->type->indexEnd - this->type->indexStart + 1; i++) {
                 vec.push_back(eleOfArr);
             }
 
@@ -339,23 +351,23 @@ llvm::Value *tree::VarDef::codeGen(CodeGenContext *context) {
     return alloc;
 }
 
-llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
+llvm::Value *tree::FuncDef::codeGen(CodeGenContext *context) {
     std::cout << "Function defining: " << this->name << std::endl;
     context->funcDefMap[this->name] = this;
 
     std::vector<llvm::Type *> argTy;
-    for (int i = 0; i < this->args_type.size(); i++) {
+    for (int i = 0; i < this->argsType.size(); i++) {
         if (this->args_is_formal_parameters[i]) {  // 参数传递 引用/值
             argTy.push_back(llvm::Type::getInt32PtrTy(globalContext));
         } else {
-            argTy.push_back(context->getLlvmType(this->args_type[i]));
+            argTy.push_back(context->getLlvmType(this->argsType[i]));
         }
     }
 
     llvm::FunctionType *funcType = llvm::FunctionType::get(
-        context->getLlvmType(this->rtn_type),  // Type *Ty                 // 函数返回值类型
-        llvm::makeArrayRef(argTy),             // ArrayRef<Type *> Params  // 参数类型
-        false);                                // bool isVarArg            // 定长
+        context->getLlvmType(this->retType),  // Type *Ty                 // 函数返回值类型
+        llvm::makeArrayRef(argTy),            // ArrayRef<Type *> Params  // 参数类型
+        false);                               // bool isVarArg            // 定长
     llvm::Function *func =
         llvm::Function::Create(funcType, llvm::GlobalValue::InternalLinkage,
             llvm::Twine(this->name),  // 函数名
@@ -378,18 +390,18 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
         llvm::Type *ty;
         if (this->args_is_formal_parameters[i]) {
             ty = llvm::Type::getInt32PtrTy(globalContext);
-            std::cout << "|--- Formal argument define: " << this->args_name[i] << std::endl;
+            std::cout << "|--- Formal argument define: " << this->argsName[i] << std::endl;
         } else {
-            ty = context->getLlvmType(this->args_type[i]);
-            std::cout << "|--- Argument define: " << this->args_name[i] << std::endl;
+            ty = context->getLlvmType(this->argsType[i]);
+            std::cout << "|--- Argument define: " << this->argsName[i] << std::endl;
         }
         llvm::Value *alloc = new llvm::AllocaInst(  // 为参数分配空间
             ty,                                     // 参数类型
             0,
-            llvm::Twine(this->args_name[i]),  // 参数名
+            llvm::Twine(this->argsName[i]),  // 参数名
             context->getCurBlk());
         argValue           = argValue_iter++;
-        argValue->setName(llvm::Twine(this->args_name[i]));
+        argValue->setName(llvm::Twine(this->argsName[i]));
         new llvm::StoreInst(  // 存参数值
             argValue,         // 参数值
             alloc,            // 参数地址
@@ -397,9 +409,9 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
             block);
     }
 
-    if (this->rtn_type != nullptr) {
+    if (this->retType != nullptr) {
         new llvm::AllocaInst(  // 为返回值分配地址
-            context->getLlvmType(this->rtn_type), 0, llvm::Twine(this->name),
+            context->getLlvmType(this->retType), 0, llvm::Twine(this->name),
             context->getCurBlk());
         std::cout << "|--- Function return value declaration" << std::endl;
     }
@@ -412,7 +424,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
             var_d->codeGen(context);
         }
 
-        for (tree::FunctionDef *func_d : this->define->funcDef) {
+        for (tree::FuncDef *func_d : this->define->funcDef) {
             func_d->codeGen(context);
         }
 
@@ -421,7 +433,7 @@ llvm::Value *tree::FunctionDef::codeGen(CodeGenContext *context) {
 
     this->body->codeGen(context);
 
-    if (this->rtn_type != nullptr) {
+    if (this->retType != nullptr) {
         std::cout << "|--- Generating return value for function" << std::endl;
         llvm::Value *load = new llvm::LoadInst(  // 加载返回值的地址
             context->getValue(this->name), llvm::Twine(""), false, context->getCurBlk());
@@ -664,16 +676,16 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
 
     llvm::Value *ret;
     for (int i = 0; i < this->situations.size(); i++) {
-        for (int j = 0; j < this->situations[i]->match_list.size(); j++) {
+        for (int j = 0; j < this->situations[i]->caseVec.size(); j++) {
             llvm::BasicBlock *basBlock = llvm::BasicBlock::Create(
                 globalContext, llvm::Twine("case"), context->getCurFunc());
 
             std::cout << "|--- In case " << i << ":" << j << std::endl;
-            tree::BinaryExp *cond = new tree::BinaryExp(
-                OP_EQUAL, this->object, this->situations[i]->match_list[j]);
+            tree::BinaryExp *cond =
+                new tree::BinaryExp(OP_EQUAL, this->object, this->situations[i]->caseVec[j]);
 
             if (i == this->situations.size() - 1 &&
-                j == this->situations[i]->match_list.size() - 1) {  // 最后一块
+                j == this->situations[i]->caseVec.size() - 1) {  // 最后一块
                 ret = llvm::BranchInst::Create(  // 最后一块连接到 exitBlock
                     basBlock,                    // BasicBlock *IfTrue
                     exitBlock,  // BasicBlock *IfFalse      // 不符合条件，退出
@@ -693,7 +705,7 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
     }
 
     for (int i = 0; i < this->situations.size(); i++) {  // 对于每一种 situation
-        for (int j = 0; j < this->situations[i]->match_list.size();
+        for (int j = 0; j < this->situations[i]->caseVec.size();
              j++) {  // 每一种 situation 中的每一个 match
             llvm::BasicBlock *basBlock = llvm::BasicBlock::Create(
                 globalContext, llvm::Twine("caseStmt"), context->getCurFunc());
@@ -703,12 +715,12 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
 
     // llvm::Value *ret;
     for (int i = 0, p = 0; i < this->situations.size(); i++, p++) {
-        for (int j = 0; j < this->situations[i]->match_list.size(); j++, p++) {
+        for (int j = 0; j < this->situations[i]->caseVec.size(); j++, p++) {
             std::cout << "in case No." << i << std::endl;
             std::cout << "|__case's No." << j << std::endl;
 
-            tree::BinaryExp *cond = new tree::BinaryExp(
-                OP_EQUAL, this->object, this->situations[i]->match_list[j]);
+            tree::BinaryExp *cond =
+                new tree::BinaryExp(OP_EQUAL, this->object, this->situations[i]->caseVec[j]);
 
             llvm::BasicBlock *nextBlock;
             if (p == blocks.size() - 1) {
@@ -731,7 +743,7 @@ llvm::Value *tree::CaseStm::codeGen(CodeGenContext *context) {
     }
 
     for (int i = 0, p = 0; i < this->situations.size(); i++, p++) {
-        for (int j = 0; j < this->situations[i]->match_list.size(); j++, p++) {
+        for (int j = 0; j < this->situations[i]->caseVec.size(); j++, p++) {
             context->pushBlock(blocks[p]);
             this->situations[i]->codeGen(context);
             llvm::BranchInst::Create(exitBlock, context->getCurBlk());

@@ -25,7 +25,7 @@ namespace tree {
     class ConstDef;
     class TypeDef;
     class VarDef;
-    class FunctionDef;
+    class FuncDef;
     // stm
     class AssignStm;
     class CallStm;
@@ -50,8 +50,8 @@ namespace tree {
     class Base {
       public:
         int node_type;
-        Base *father  = nullptr;
-        bool is_legal = true;
+        Base *father = nullptr;
+        bool isLegal = true;
         Base(int type = 0) : node_type(type) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
         virtual bool checkSemantics()                         = 0;
@@ -61,13 +61,12 @@ namespace tree {
       public:
         std::string name;  // use what name to find this value, may be empty
         int baseType;      // 0: int 1: real 2: char 3: bool 5: array 6: record
-        int array_start = 0,
-            array_end   = 0;  // the index for array. useless if the type is not an array
+        int indexStart = 0,
+            indexEnd   = 0;  // the index for array. useless if the type is not an array
         std::vector<Type *> childType;  // a list of the type of children, there is only one
                                         // child if the type is array
         Type() : Base(ND_TYPE) {}
-        Type(int _base_type) : Base(ND_TYPE), baseType(_base_type) {}
-        llvm::Type *toLLVMType(CodeGenContext &context);
+        Type(int _baseType) : Base(ND_TYPE), baseType(_baseType) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override { return false; }
     };
@@ -100,31 +99,31 @@ namespace tree {
 
     class Define : public Base {
       public:
-        std::vector<LabelDef *> label_def;   // can be empty
-        std::vector<ConstDef *> constDef;    // can be empty
-        std::vector<TypeDef *> type_def;     // can be empty
-        std::vector<VarDef *> varDef;        // can be empty
-        std::vector<FunctionDef *> funcDef;  // can be empty
-        Define(std::vector<LabelDef *> _label_def, std::vector<ConstDef *> _const_def,
-            std::vector<TypeDef *> _type_def, std::vector<VarDef *> _var_def,
-            std::vector<FunctionDef *> _function_def)
+        std::vector<LabelDef *> labelDef;  // can be empty
+        std::vector<ConstDef *> constDef;  // can be empty
+        std::vector<TypeDef *> typeDef;    // can be empty
+        std::vector<VarDef *> varDef;      // can be empty
+        std::vector<FuncDef *> funcDef;    // can be empty
+        Define(std::vector<LabelDef *> _labelDef, std::vector<ConstDef *> _constDef,
+            std::vector<TypeDef *> _typeDef, std::vector<VarDef *> _varDef,
+            std::vector<FuncDef *> _funcDef)
             : Base(ND_DEFINE) {
-            for (auto ldef : _label_def)
+            for (auto ldef : _labelDef)
                 addLabel(ldef);
-            for (auto cdef : _const_def)
+            for (auto cdef : _constDef)
                 addConst(cdef);
-            for (auto tdef : _type_def)
+            for (auto tdef : _typeDef)
                 addType(tdef);
-            for (auto vdef : _var_def)
+            for (auto vdef : _varDef)
                 addVar(vdef);
-            for (auto fdef : _function_def)
+            for (auto fdef : _funcDef)
                 addFunction(fdef);
         }
         void addLabel(LabelDef *);
         void addConst(ConstDef *);
         void addType(TypeDef *);
         void addVar(VarDef *);
-        void addFunction(FunctionDef *);
+        void addFunction(FuncDef *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -140,7 +139,7 @@ namespace tree {
 
     class Situation : public Base {
       public:
-        std::vector<Exp *> match_list;
+        std::vector<Exp *> caseVec;
         Body *solution = nullptr;
         Situation() : Base(ND_SITUATION) {}
         void addMatch(Exp *);
@@ -165,8 +164,8 @@ namespace tree {
 
     class LabelDef : public Base {
       public:
-        int label_index;
-        LabelDef(int _label_index) : Base(ND_LABEL_DEF) {}
+        int labelIndex;
+        LabelDef(int _labelIndex) : Base(ND_LABEL_DEF) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -206,16 +205,16 @@ namespace tree {
         bool checkSemantics() override;
     };
 
-    class FunctionDef : public Base {
+    class FuncDef : public Base {
       public:
         std::string name;
-        std::vector<Type *> args_type;
-        std::vector<std::string> args_name;
+        std::vector<Type *> argsType;
+        std::vector<std::string> argsName;
         std::vector<bool> args_is_formal_parameters;  // true:&, false:local
-        Type *rtn_type = nullptr;                     // procedure == nullptr
+        Type *retType  = nullptr;                     // procedure == nullptr
         Define *define = nullptr;
         Body *body     = nullptr;
-        FunctionDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
+        FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
         void ARGS_CHANGE_PLUS(const std::string &, Type *, bool);
         void setReturnType(Type *);
         void DEFINETION_CHANGE_PLUS(Define *);
@@ -408,7 +407,7 @@ namespace tree {
     ConstDef *findConst(const std::string &type_name, Base *node);
     Type *findType(const std::string &type_name, Base *node);
     Type *findVar(const std::string &type_name, Base *node);
-    FunctionDef *findFunction(const std::string &type_name, Base *node);
+    FuncDef *findFunction(const std::string &type_name, Base *node);
 
 }  // namespace tree
 #endif

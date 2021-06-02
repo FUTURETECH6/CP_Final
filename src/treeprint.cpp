@@ -70,7 +70,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 if (node->constDef.size() > 0) {
                     for (auto stm : node->constDef) {
                         str.append("\n");
-                        if (node->type_def.size() > 0 || node->varDef.size() > 0 ||
+                        if (node->typeDef.size() > 0 || node->varDef.size() > 0 ||
                             node->funcDef.size() > 0)
                             str.append(print_tab(layer));
                         else
@@ -79,8 +79,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                         str.append(print_rec(stm, layer + 1));
                     }
                 }
-                if (node->type_def.size() > 0) {
-                    for (auto stm : node->type_def) {
+                if (node->typeDef.size() > 0) {
+                    for (auto stm : node->typeDef) {
                         str.append("\n");
                         if (node->varDef.size() > 0 || node->funcDef.size() > 0)
                             str.append(print_tab(layer));
@@ -125,8 +125,8 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 auto *node = (tree::Situation *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
-                str.append("match_list: ");
-                for (auto match_item : node->match_list)
+                str.append("caseVec: ");
+                for (auto match_item : node->caseVec)
                     str.append(print_rec(match_item, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
@@ -173,7 +173,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
             } break;
 
             case ND_FUNC_DEF: {
-                auto *node = (tree::FunctionDef *)ori_node;
+                auto *node = (tree::FuncDef *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("func_name: ");
@@ -181,22 +181,22 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("args: ");
-                for (int i = 0; i < node->args_name.size(); i++) {
+                for (int i = 0; i < node->argsName.size(); i++) {
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("var_name: ");
-                    str.append(node->args_name[i]);
+                    str.append(node->argsName[i]);
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("arg_is_formal_parameter: ");
-                    str.append(print_rec(node->args_type[i], layer + 1));
+                    str.append(print_rec(node->argsType[i], layer + 1));
                     str.append(node->args_is_formal_parameters[i] ? " true" : " false");
                 }
-                if (node->rtn_type != nullptr) {
+                if (node->retType != nullptr) {
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("return_type: ");
-                    str.append(print_rec(node->rtn_type, layer + 1));
+                    str.append(print_rec(node->retType, layer + 1));
                 }
                 if (node->define != nullptr) {
                     str.append("\n");
@@ -423,10 +423,10 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     case TY_ARRAY: {
                         str.append("\"type\":\"array\", \"start_index\": ");
                         char num[100];
-                        sprintf(num, "%d", node->array_start);
+                        sprintf(num, "%d", node->indexStart);
                         str.append(num);
                         str.append(", \"end_index\": ");
-                        sprintf(num, "%d", node->array_end);
+                        sprintf(num, "%d", node->indexEnd);
                         str.append(num);
                         str.append(", \"childType\": ");
                         str.append(print_rec(node->childType[0], layer + 1));

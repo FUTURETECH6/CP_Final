@@ -26,6 +26,6 @@ int main(int argc, char **argv) {
 
     context.generateCode(*ast_root, "a.bc");
 
-    // context.runCode();
+    context.runCode();
     return 0;
 }

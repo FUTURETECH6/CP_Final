@@ -12,7 +12,7 @@ void tree::Program::DEFINETION_CHANGE_PLUS(Define *define) {
 // functions for Define
 void tree::Define::addLabel(LabelDef *def) {
     def->father = this;
-    label_def.push_back(def);
+    labelDef.push_back(def);
 }
 
 void tree::Define::addConst(ConstDef *def) {
@@ -22,7 +22,7 @@ void tree::Define::addConst(ConstDef *def) {
 
 void tree::Define::addType(TypeDef *def) {
     def->father = this;
-    type_def.push_back(def);
+    typeDef.push_back(def);
 }
 
 void tree::Define::addVar(VarDef *def) {
@@ -30,7 +30,7 @@ void tree::Define::addVar(VarDef *def) {
     varDef.push_back(def);
 }
 
-void tree::Define::addFunction(FunctionDef *def) {
+void tree::Define::addFunction(FuncDef *def) {
     def->father = this;
     funcDef.push_back(def);
 }
@@ -48,7 +48,7 @@ void tree::Body::addStm(Stm *stm) {
 
 void tree::Situation::addMatch(Exp *exp) {
     exp->father = this;
-    match_list.push_back(exp);
+    caseVec.push_back(exp);
 }
 
 void tree::Situation::addSolution(Body *body) {
@@ -58,29 +58,29 @@ void tree::Situation::addSolution(Body *body) {
     }
 }
 
-void tree::FunctionDef::ARGS_CHANGE_PLUS(
+void tree::FuncDef::ARGS_CHANGE_PLUS(
     const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
     arg_type->father = this;
-    args_name.push_back(arg_name);
-    args_type.push_back(arg_type);
+    argsName.push_back(arg_name);
+    argsType.push_back(arg_type);
     args_is_formal_parameters.push_back(is_formal_parameter);
 }
 
-void tree::FunctionDef::setReturnType(Type *rtn_type) {
-    if (this->rtn_type == nullptr) {
-        rtn_type->father = this;
-        this->rtn_type   = rtn_type;
+void tree::FuncDef::setReturnType(Type *retType) {
+    if (this->retType == nullptr) {
+        retType->father = this;
+        this->retType   = retType;
     }
 }
 
-void tree::FunctionDef::DEFINETION_CHANGE_PLUS(Define *def) {
+void tree::FuncDef::DEFINETION_CHANGE_PLUS(Define *def) {
     if (define == nullptr) {
         def->father = this;
         define      = def;
     }
 }
 
-void tree::FunctionDef::BODY_CHANGE_PLUS(Body *body) {
+void tree::FuncDef::BODY_CHANGE_PLUS(Body *body) {
     if (this->body == nullptr) {
         body->father = this;
         this->body   = body;
@@ -159,7 +159,7 @@ tree::Type *tree::findType(const std::string &type_name, Base *node) {
     switch (node->node_type) {
         case ND_PROGRAM: return findType(type_name, ((Program *)node)->define);
         case ND_FUNC_DEF: {
-            tree::Type *local = findType(type_name, ((FunctionDef *)node)->define);
+            tree::Type *local = findType(type_name, ((FuncDef *)node)->define);
             if (local == nullptr)
                 return findType(type_name, node->father);
             else
@@ -167,7 +167,7 @@ tree::Type *tree::findType(const std::string &type_name, Base *node) {
         }
         case ND_DEFINE: {
             Define *d_node = (Define *)node;
-            for (TypeDef *iter : d_node->type_def) {
+            for (TypeDef *iter : d_node->typeDef) {
                 Type *result = findType(type_name, iter);
                 if (result != nullptr)
                     return result;
@@ -205,11 +205,11 @@ tree::Type *tree::findType(const std::string &type_name, Base *node) {
     }
 }
 tree::Type *tree::copyType(Type *origin) {
-    auto *copy        = new Type();
-    copy->name        = origin->name;
-    copy->baseType    = origin->baseType;
-    copy->array_start = origin->array_start;
-    copy->array_end   = origin->array_end;
+    auto *copy       = new Type();
+    copy->name       = origin->name;
+    copy->baseType   = origin->baseType;
+    copy->indexStart = origin->indexStart;
+    copy->indexEnd   = origin->indexEnd;
     copy->childType.clear();
     for (Type *iter : origin->childType)
         copy->childType.push_back(copyType(iter));
@@ -224,8 +224,8 @@ bool tree::isSameType(Type *type1, Type *type2) {
             case TY_REAL:
             case TY_BOOLEAN: return true;
             case TY_ARRAY:
-                if (type1->array_end - type2->array_start ==
-                    type2->array_end - type2->array_start)
+                if (type1->indexEnd - type2->indexStart ==
+                    type2->indexEnd - type2->indexStart)
                     return isSameType(type1->childType[0], type2->childType[0]);
                 break;
             case TY_RECORD:
@@ -247,35 +247,35 @@ tree::Base *tree::findName(const std::string &name, tree::Base *node) {
             for (ConstDef *iter : d_node->constDef)
                 if (iter->name == name)
                     return iter;
-            for (TypeDef *iter : d_node->type_def)
+            for (TypeDef *iter : d_node->typeDef)
                 if (iter->name == name)
                     return iter;
             for (VarDef *iter : d_node->varDef)
                 if (iter->name == name)
                     return iter;
-            for (FunctionDef *iter : d_node->funcDef)
+            for (FuncDef *iter : d_node->funcDef)
                 if (iter->name == name)
                     return iter;
             return nullptr;
         }
         case ND_FUNC_DEF: {
-            auto *f_node = (FunctionDef *)node;
+            auto *f_node = (FuncDef *)node;
             if (f_node->name == name)
                 return f_node;
-            for (int i = 0; i < f_node->args_name.size(); i++)
-                if (f_node->args_name[i] == name)
-                    return new ArgDef(f_node->args_type[i]);
+            for (int i = 0; i < f_node->argsName.size(); i++)
+                if (f_node->argsName[i] == name)
+                    return new ArgDef(f_node->argsType[i]);
             Define *d_node = f_node->define;
             for (ConstDef *iter : d_node->constDef)
                 if (iter->name == name)
                     return iter;
-            for (TypeDef *iter : d_node->type_def)
+            for (TypeDef *iter : d_node->typeDef)
                 if (iter->name == name)
                     return iter;
             for (VarDef *iter : d_node->varDef)
                 if (iter->name == name)
                     return iter;
-            for (FunctionDef *iter : d_node->funcDef)
+            for (FuncDef *iter : d_node->funcDef)
                 if (iter->name == name)
                     return iter;
             return findName(name, node->father);
@@ -310,15 +310,15 @@ bool tree::canFindLabel(const int &label, Base *node) {
     switch (node->node_type) {
         case ND_PROGRAM: {
             Define *d_node = ((Program *)node)->define;
-            for (LabelDef *iter : d_node->label_def)
-                if (iter->label_index == label)
+            for (LabelDef *iter : d_node->labelDef)
+                if (iter->labelIndex == label)
                     return true;
             return false;
         }
         case ND_FUNC_DEF: {
-            Define *d_node = ((FunctionDef *)node)->define;
-            for (LabelDef *iter : d_node->label_def)
-                if (iter->label_index == label)
+            Define *d_node = ((FuncDef *)node)->define;
+            for (LabelDef *iter : d_node->labelDef)
+                if (iter->labelIndex == label)
                     return true;
             return canFindLabel(label, node->father);
         }
@@ -370,12 +370,12 @@ tree::Type *tree::findVar(const std::string &type_name, Base *node) {
         return nullptr;
 }
 
-tree::FunctionDef *tree::findFunction(const std::string &type_name, Base *node) {
+tree::FuncDef *tree::findFunction(const std::string &type_name, Base *node) {
     Base *result = findName(type_name, node);
     if (result == nullptr)
         return nullptr;
     else if (result->node_type == ND_FUNC_DEF)
-        return (FunctionDef *)result;
+        return (FuncDef *)result;
     else
         return nullptr;
 }

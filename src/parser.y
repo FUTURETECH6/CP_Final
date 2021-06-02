@@ -45,7 +45,7 @@ std::vector<tree::TypeDef *> tmp;
     tree::Type* type;
     TypeDef* typeDef;
     VarDef* varDef;
-    FunctionDef* funcDef;
+    FuncDef* funcDef;
     std::vector<string> *strVal;
     std::vector<Exp *> *expVal;
     std::vector<tree::Type *> *tyVal;
@@ -53,7 +53,7 @@ std::vector<tree::TypeDef *> tmp;
     std::vector<ConstDef *> *constVal;
     std::vector<TypeDef *> *typeVal;
     std::vector<VarDef *> *varVal;
-    std::vector<FunctionDef *> *funVal;
+    std::vector<FuncDef *> *funVal;
     std::vector<Situation *> *situationVal;
 }
 
@@ -153,8 +153,8 @@ Category_STSTEM_TY:             TOKEN_CHAR                            {$$ = new 
 Category_TYPE_DECLARTION_EASY:     Category_STSTEM_TY                          {$$ = $1;} // Type
                     | PSACL_identify                              {bool T1 = false; for(auto tdef : tmp) {if(tdef->name == PASCALiconTable[$1].id) {$$ = tdef->type; T1 = true;}} if(T1==false) yyerror("Semantics Error: Undefined type");} // we define
                     // | TOKEN_LP STR_designate_array TOKEN_RP               {$$ = $2;}
-                    | VLU_EXP_PSACL_COSNT TOKEN_DOTDOT VLU_EXP_PSACL_COSNT  {$$ = new Type(TY_ARRAY); $$->array_start = ((ConstantExp*)$1)->value->val.integer_value; 
-                                                                                  $$->array_end = ((ConstantExp*)$3)->value->val.integer_value;
+                    | VLU_EXP_PSACL_COSNT TOKEN_DOTDOT VLU_EXP_PSACL_COSNT  {$$ = new Type(TY_ARRAY); $$->indexStart = ((ConstantExp*)$1)->value->val.integer_value; 
+                                                                                  $$->indexEnd = ((ConstantExp*)$3)->value->val.integer_value;
                                                         }
                     ;
 
@@ -186,17 +186,17 @@ PSACL_VAR_ARRAY_DE:        PSACL_VAR_ARRAY_DE PSACL_VAR_NO_DE            {$$ = $
 PSACL_VAR_NO_DE:             STR_designate_array TOKEN_COLON Category_TYPE_DECLARTION TOKEN_SEMI {$$ = new std::vector<VarDef*>(); for(auto iter : *$1) {$$->push_back(new VarDef(iter, $3));}} // TODO std::vector
                     ;
 
-informal_PASCAL:         informal_PASCAL F_def_PASCAL_DECLARTION        {$$ = $1; $$->push_back($2);} // std::vector <FunctionDef *>
+informal_PASCAL:         informal_PASCAL F_def_PASCAL_DECLARTION        {$$ = $1; $$->push_back($2);} // std::vector <FuncDef *>
                     | informal_PASCAL Pro_def_PASCAL_DECLARTION       {$$ = $1; $$->push_back($2);}
-                    | F_def_PASCAL_DECLARTION                     {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
-                    | Pro_def_PASCAL_DECLARTION                    {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
-                    | %prec "then"                      {$$ = new std::vector<FunctionDef *>();} /* empty */
+                    | F_def_PASCAL_DECLARTION                     {$$ = new std::vector<FuncDef *>; $$->push_back($1);}
+                    | Pro_def_PASCAL_DECLARTION                    {$$ = new std::vector<FuncDef *>; $$->push_back($1);}
+                    | %prec "then"                      {$$ = new std::vector<FuncDef *>();} /* empty */
                     ;
 
-F_def_PASCAL_DECLARTION:        FUNC_DEF_FIRST_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                   {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);} // FunctionDef *
+F_def_PASCAL_DECLARTION:        FUNC_DEF_FIRST_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                   {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);} // FuncDef *
                     ;
 
-FUNC_DEF_FIRST_PASCAL_H:        TOKEN_FUNCTION PSACL_identify FUNC_PARA_PASCL TOKEN_COLON Category_TYPE_DECLARTION_EASY       {$$ = $3; $$->name = PASCALiconTable[$2].id; $$->setReturnType($5); for(auto argt: $$->args_type) {argt->father = $$;}} // TODO                                                                 
+FUNC_DEF_FIRST_PASCAL_H:        TOKEN_FUNCTION PSACL_identify FUNC_PARA_PASCL TOKEN_COLON Category_TYPE_DECLARTION_EASY       {$$ = $3; $$->name = PASCALiconTable[$2].id; $$->setReturnType($5); for(auto argt: $$->argsType) {argt->father = $$;}} // TODO                                                                 
                     ;
 
 Pro_def_PASCAL_DECLARTION:       FUNC_DEF_PROCED_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                  {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);}
@@ -206,17 +206,17 @@ FUNC_DEF_PROCED_PASCAL_H:       TOKEN_PROCEDURE PSACL_identify FUNC_PARA_PASCL  
                     ;
 
 FUNC_PARA_PASCL:           TOKEN_LP FUNC_PARA_ARRAY_DECLARTION TOKEN_RP          {$$ = $2;}
-                    | /* empty */                       {$$ = new FunctionDef("tmp");}
+                    | /* empty */                       {$$ = new FuncDef("tmp");}
                     ;
 
-FUNC_PARA_ARRAY_DECLARTION:       FUNC_PARA_ARRAY_DECLARTION TOKEN_SEMI FUNC_PAR_ARRAY_TYPE                      {$$ = $1; $$->args_name.insert($$->args_name.end(), $3->args_name.begin(), $3->args_name.end());
-                                                                                        $$->args_type.insert($$->args_type.end(), $3->args_type.begin(), $3->args_type.end());
+FUNC_PARA_ARRAY_DECLARTION:       FUNC_PARA_ARRAY_DECLARTION TOKEN_SEMI FUNC_PAR_ARRAY_TYPE                      {$$ = $1; $$->argsName.insert($$->argsName.end(), $3->argsName.begin(), $3->argsName.end());
+                                                                                        $$->argsType.insert($$->argsType.end(), $3->argsType.begin(), $3->argsType.end());
                                                                                         $$->args_is_formal_parameters.insert($$->args_is_formal_parameters.end(), $3->args_is_formal_parameters.begin(), $3->args_is_formal_parameters.end());}
                     | FUNC_PAR_ARRAY_TYPE                                            {$$ = $1;}
                     ;
 
-FUNC_PAR_ARRAY_TYPE:       STR_PARAMATER_VAR_LIST TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, true);}} // true args, type, bool
-                    | STR_PARAMATER_VAL_ARRAY TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, false);}} // false
+FUNC_PAR_ARRAY_TYPE:       STR_PARAMATER_VAR_LIST TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, true);}} // true args, type, bool
+                    | STR_PARAMATER_VAL_ARRAY TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FuncDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, false);}} // false
                     ;
 
 STR_PARAMATER_VAR_LIST:        TOKEN_VAR STR_designate_array                   {$$ = $2;} // std::vector <string> procedure true
