@@ -88,12 +88,12 @@ namespace tree {
         Define *define = nullptr;
         Body *body     = nullptr;
         Program(const std::string &_name) : Base(ND_PROGRAM), name(_name) {}
-        void PASCAL_ADD_TURN(Routine *_routine) {
-            this->DEFINETION_CHANGE_PLUS(_routine->define);
-            this->BODY_CHANGE_PLUS(_routine->body);
+        void addRoutine(Routine *_routine) {
+            this->addDefine(_routine->define);
+            this->addBody(_routine->body);
         }
-        void DEFINETION_CHANGE_PLUS(Define *);
-        void BODY_CHANGE_PLUS(Body *);
+        void addDefine(Define *);
+        void addBody(Body *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -216,10 +216,10 @@ namespace tree {
         Define *define = nullptr;
         Body *body     = nullptr;
         FunctionDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
-        void ARGS_CHANGE_PLUS(const std::string &, Type *, bool);
+        void addArgs(const std::string &, Type *, bool);
         void setReturnType(Type *);
-        void DEFINETION_CHANGE_PLUS(Define *);
-        void BODY_CHANGE_PLUS(Body *);
+        void addDefine(Define *);
+        void addBody(Body *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -249,7 +249,7 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallStm(const std::string &_name) : Stm(ND_CALL_STM), name(_name) {}
-        void ARGS_CHANGE_PLUS(Exp *);
+        void addArgs(Exp *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };
@@ -363,7 +363,7 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallExp(const std::string &_name) : Exp(ND_CALL_EXP), name(_name) {}
-        void ARGS_CHANGE_PLUS(Exp *args);
+        void addArgs(Exp *args);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
     };

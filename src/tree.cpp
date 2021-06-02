@@ -6,7 +6,7 @@ using namespace tree;
 using namespace std;
 
 // functions for Program
-void Program::DEFINETION_CHANGE_PLUS(Define *define) {
+void Program::addDefine(Define *define) {
     if (this->define == nullptr) {
         define->father = this;
         this->define   = define;
@@ -37,7 +37,7 @@ void Define::addFunction(FunctionDef *def) {
     def->father = this;
     function_def.push_back(def);
 }
-void Program::BODY_CHANGE_PLUS(Body *body) {
+void Program::addBody(Body *body) {
     if (this->body == nullptr) {
         body->father = this;
         this->body   = body;
@@ -61,7 +61,7 @@ void Situation::addSolution(Body *body) {
     }
 }
 
-void FunctionDef::ARGS_CHANGE_PLUS(
+void FunctionDef::addArgs(
     const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
     arg_type->father = this;
     args_name.push_back(arg_name);
@@ -76,21 +76,21 @@ void FunctionDef::setReturnType(Type *rtn_type) {
     }
 }
 
-void FunctionDef::DEFINETION_CHANGE_PLUS(Define *def) {
+void FunctionDef::addDefine(Define *def) {
     if (define == nullptr) {
         def->father = this;
         define      = def;
     }
 }
 
-void FunctionDef::BODY_CHANGE_PLUS(Body *body) {
+void FunctionDef::addBody(Body *body) {
     if (this->body == nullptr) {
         body->father = this;
         this->body   = body;
     }
 }
 
-void CallStm::ARGS_CHANGE_PLUS(Exp *exp) {
+void CallStm::addArgs(Exp *exp) {
     exp->father = this;
     this->args.push_back(exp);
 }
@@ -151,7 +151,7 @@ void RepeatStm::addLoop(Body *body) {
 }
 
 // functions for CallExp
-void CallExp::ARGS_CHANGE_PLUS(Exp *exp) {
+void CallExp::addArgs(Exp *exp) {
     exp->father = this;
     args.push_back(exp);
 }
