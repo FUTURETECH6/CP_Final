@@ -8,14 +8,14 @@
 extern "C" int yylex(void);
 extern "C" FILE *yyin;
 
-int currentSymTabSize = 0;
-symTabNode symtab[SYMTAB_SIZE];
+int PASCLsymboltableSIZECURR = 0;
+symbolTableTreeNode PASCALiconTable[symbolTable_SIZE];
 
 tree::Program *ast_root;
 std::vector<tree::TypeDef *> tmp;
 %}
 
-%code requires {
+%code requires { 
     #include <iostream>
     #include "tree.h"
     using namespace std;
@@ -23,14 +23,14 @@ std::vector<tree::TypeDef *> tmp;
 }
 
 // start symbol
-%start program
+%start PASCAL_PROGRAM
 
 // token
 %token 
-    T_LP T_RP T_LB T_RB T_DOT T_COMMA T_COLON T_PLUS T_MINUS T_MUL T_DIV T_GT T_LT T_EQUAL T_NE T_LE T_GE T_ASSIGN T_NOT 
-    T_MOD T_DOTDOT T_SEMI T_AND T_ARRAY T_BEGIN T_CASE T_CONST T_LABEL T_DO T_DOWNTO T_ELSE T_END T_FOR T_FUNCTION T_GOTO 
-    T_IF T_IN T_OF T_OR T_PACKED T_PROCEDURE T_PROGRAM T_RECORD T_REPEAT T_SET T_THEN T_TO T_TYPE T_UNTIL T_VAR T_WHILE T_WITH 
-    T_ABS T_CHR T_ODD T_ORD T_PRED T_SQR T_SQRT T_SUCC T_WRITE T_WRITELN T_READ T_BOOLEAN T_CHAR T_INTEGER T_REAL T_STRING T_TRUE T_FALSE T_MAXINT
+    TOKEN_LP TOKEN_RP TOKEN_LB TOKEN_RB TOKEN_DOT TOKEN_COMMA TOKEN_COLON TOKEN_PLUS TOKEN_MINUS TOKEN_MUL TOKEN_DIV TOKEN_GT TOKEN_LT TOKEN_EQUAL TOKEN_NE TOKEN_LE TOKEN_GE TOKEN_ASSIGN TOKEN_NOT 
+    TOKEN_MOD TOKEN_DOTDOT TOKEN_SEMI TOKEN_AND TOKEN_ARRAY TOKEN_BEGIN TOKEN_CASE TOKEN_CONST TOKEN_LABEL TOKEN_DO TOKEN_DOWNTO TOKEN_ELSE TOKEN_END TOKEN_FOR TOKEN_FUNCTION TOKEN_GOTO 
+    TOKEN_IF TOKEN_IN TOKEN_OF TOKEN_OR TOKEN_PACKED TOKEN_PROCEDURE TOKEN_PROGRAM TOKEN_RECORD TOKEN_REPEAT TOKEN_SET TOKEN_THEN TOKEN_TO TOKEN_TYPE TOKEN_UNTIL TOKEN_VAR TOKEN_WHILE TOKEN_WITH 
+    TOKEN_ABS TOKEN_CHR TOKEN_ODD TOKEN_ORD TOKEN_PRED TOKEN_SQR TOKEN_SQRT TOKEN_SUCC TOKEN_WRITE TOKEN_WRITELN TOKEN_READ TOKEN_BOOLEAN TOKEN_CHAR TOKEN_INTEGER TOKEN_REAL TOKEN_STRING TOKEN_TRUE TOKEN_FALSE TOKEN_MAXINT
 
 %union {
     int iVal;
@@ -57,307 +57,308 @@ std::vector<tree::TypeDef *> tmp;
     std::vector<Situation *> *situationVal;
 }
 
-%token <iVal> S_ID S_INTEGER S_REAL S_CHAR S_STRING 
-%type <tVal> case_expr
-%type <root> program program_head
-%type <rout> routine sub_routine
-%type <define> routine_head
-%type <body> routine_body compound_stmt stmt_list else_clause stmt non_label_stmt
-%type <stm> assign_stmt proc_stmt if_stmt repeat_stmt while_stmt for_stmt case_stmt goto_stmt sys_proc
-%type <exp> const_value sys_con expression expr term factor
-%type <callExp> sys_funct
-%type <type> type_decl simple_type_decl array_type_decl record_type_decl sys_type direction
-%type <typeDef> type_definition
-%type <funcDef> function_head procedure_head function_decl procedure_decl parameters para_decl_list para_type_list
-%type <expVal> expression_list args_list
-%type <strVal> name_list var_para_list val_para_list
-%type <tyVal> field_decl_list field_decl
-%type <labelVal> label_part label_list
-%type <constVal> const_part const_expr_list
-%type <typeVal> type_part type_decl_list  
-%type <varVal> var_part var_decl_list var_decl 
-%type <funVal> routine_part
-%type <situationVal> case_expr_list
+%token <iVal> PSACL_identify PSACL_int PSACL_realnum PSACL_character PSACL_str 
+%type <tVal> EXPR_WITH_PSACL
+%type <root> PASCAL_PROGRAM PASCAL_HEAD_PROGRAM
+%type <rout> regular_array sub_regular_array
+%type <define> regular_array_head
+%type <body> regular_array_body statement_mixture statement_array ELSE_PASCAL_ITEM STATEMENT_PASCAL STATEMENT_NON_ICON
+%type <stm> STATEMENT_ALLOCATE STATEMENT_procdure STATEMENT_PASCL_IF STATEMENT_PASCL_REPEAT STATEMENT_PASCL_WHILE STATEMENT_PASCL_FOR STATEMENT_PASCL_CASES STATEMENT_PASCL_GT SYSTEM_PASCL_PRODUCRE
+%type <exp> VLU_EXP_PSACL_COSNT EXP_SYSTEM_CONTS EXP_PASCL_express EXP_PASCL_exprF EXP_PASCL_TERMF EXP_PASCL_FAT_E
+%type <callExp> CALLEXP_SYSTEM_FUNCTION
+%type <type> Category_TYPE_DECLARTION Category_TYPE_DECLARTION_EASY Category_TYPE_LIST_DECLARTION Category_REC_DECLARTION Category_STSTEM_TY Category_DIR_PAS
+%type <typeDef> Category_Def_PASCAL
+%type <funcDef> FUNC_DEF_FIRST_PASCAL_H FUNC_DEF_PROCED_PASCAL_H F_def_PASCAL_DECLARTION Pro_def_PASCAL_DECLARTION FUNC_PARA_PASCL FUNC_PARA_ARRAY_DECLARTION FUNC_PAR_ARRAY_TYPE
+%type <expVal> EXPR_ARRAY_VAL EXPR_ARG_VAL_ARRAY
+%type <strVal> STR_designate_array STR_PARAMATER_VAR_LIST STR_PARAMATER_VAL_ARRAY
+%type <tyVal> TYVAL_FIE_ARRAY_dec TYVAL_FIE_PASCAL_dec
+%type <labelVal> ICON_PSACL_ ICON_PSACL_ARRAY
+%type <constVal> COSNT_PSACL COSNT_PSACL_ARRAY
+%type <typeVal> Category_PSACL Category_PSACL_ARRAY  
+%type <varVal> PSACL_VAR_U PSACL_VAR_ARRAY_DE PSACL_VAR_NO_DE 
+%type <funVal> informal_PASCAL
+%type <situationVal> ARRAY_EXPR_PSACL
 %nonassoc "then"
-%nonassoc T_ELSE
-%nonassoc T_PROCEDURE
-%nonassoc T_FUNCTION
+%nonassoc TOKEN_ELSE
+%nonassoc TOKEN_PROCEDURE
+%nonassoc TOKEN_FUNCTION
 
 %%
-program:              program_head routine T_DOT        {ast_root = $1; ast_root->addRoutine($2);}
+PASCAL_PROGRAM:       PASCAL_HEAD_PROGRAM regular_array TOKEN_DOT        {ast_root = $1; ast_root->PASCAL_ADD_TURN($2);}
                     ;
     
-program_head:         T_PROGRAM S_ID T_SEMI             {$$ = new Program(symtab[$2].id);}
+PASCAL_HEAD_PROGRAM:  TOKEN_PROGRAM PSACL_identify TOKEN_SEMI             {$$ = new Program(PASCALiconTable[$2].id);}
                     ;
 
-routine:              routine_head routine_body         {$$ = new Routine($1, $2);} // Define, Body
+regular_array:              regular_array_head regular_array_body         {$$ = new Routine($1, $2);} // Define, Body
                     ;
 
-sub_routine:          routine_head routine_body         {$$ = new Routine($1, $2);}
+sub_regular_array:          regular_array_head regular_array_body         {$$ = new Routine($1, $2);}
                     ;
 
-routine_head:         label_part const_part type_part var_part routine_part     {$$ = new Define(*$1, *$2, *$3, *$4, *$5);} 
+regular_array_head:         ICON_PSACL_ COSNT_PSACL Category_PSACL PSACL_VAR_U informal_PASCAL     {$$ = new Define(*$1, *$2, *$3, *$4, *$5);} 
                     ;
 
-label_part:           T_LABEL label_list T_SEMI         {$$ = $2;}
+ICON_PSACL_:           TOKEN_LABEL ICON_PSACL_ARRAY TOKEN_SEMI         {$$ = $2;}
                     | /* empty */                       {$$ = new std::vector<LabelDef*>();} 
                     ;
 
-label_list:           label_list T_COMMA S_INTEGER      {$$ = $1; $$->push_back(new LabelDef($3));}       
-                    | S_INTEGER                         {$$ = new std::vector<LabelDef *>(); $$->push_back(new LabelDef($1));}
+ICON_PSACL_ARRAY:           ICON_PSACL_ARRAY TOKEN_COMMA PSACL_int      {$$ = $1; $$->push_back(new LabelDef($3));}       
+                    | PSACL_int                         {$$ = new std::vector<LabelDef *>(); $$->push_back(new LabelDef($1));}
                     ;
 
-const_part:           T_CONST const_expr_list           {$$ = $2;}  // std::vector<ConstDef *> *
+COSNT_PSACL:           TOKEN_CONST COSNT_PSACL_ARRAY           {$$ = $2;}  // std::vector<ConstDef *> *
                     | /* empty */                       {$$ = new std::vector<ConstDef *>();}
                     ;
 
-const_expr_list:      const_expr_list S_ID T_EQUAL const_value T_SEMI           {$$ = $1; $$->push_back(new ConstDef(symtab[$2].id, (Exp*)$4));} // TODO
-                    | S_ID T_EQUAL const_value T_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(symtab[$1].id, (Exp*)$3));}
+COSNT_PSACL_ARRAY:      COSNT_PSACL_ARRAY PSACL_identify TOKEN_EQUAL VLU_EXP_PSACL_COSNT TOKEN_SEMI           {$$ = $1; $$->push_back(new ConstDef(PASCALiconTable[$2].id, (Exp*)$4));} // TODO
+                    | PSACL_identify TOKEN_EQUAL VLU_EXP_PSACL_COSNT TOKEN_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(PASCALiconTable[$1].id, (Exp*)$3));}
                     ;
 
-const_value:          S_INTEGER                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = $1; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
-                    | S_REAL                            {Value* value= new Value; value->baseType = TY_REAL; value->val.real_value = atof(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_REAL);}
-                    | S_CHAR                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.char_value = symtab[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_CHAR);}
-                    | S_STRING                          {Value* value= new Value; value->baseType = TY_STRING; value->val.string_value = new string(symtab[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_STRING);}
-                    | sys_con                           {$$ = $1;}
+VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = $1; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
+                    | PSACL_realnum                            {Value* value= new Value; value->baseType = TY_REAL; value->val.real_value = atof(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_REAL);}
+                    | PSACL_character                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.char_value = PASCALiconTable[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_CHAR);}
+                    | PSACL_str                          {Value* value= new Value; value->baseType = TY_STRING; value->val.string_value = new string(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->return_type = new Type(TY_STRING);}
+                    | EXP_SYSTEM_CONTS                           {$$ = $1;}
                     ;
 
-sys_con:              T_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | T_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
-                    | T_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_INTEGER);}
+EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
+                    | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolean_value = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_BOOLEAN);}
+                    | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.integer_value = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->return_type = new Type(TY_INTEGER);}
                     ;
 
-type_part:            T_TYPE type_decl_list             {$$ = $2; tmp = *$$;}
+Category_PSACL:            TOKEN_TYPE Category_PSACL_ARRAY             {$$ = $2; tmp = *$$;}
                     | /* empty */                       {$$ = new std::vector<TypeDef *>();}
                     ;
 
-type_decl_list:       type_decl_list type_definition    {$$ = $1; $$->push_back($2);}
-                    | type_definition                   {$$ = new std::vector<TypeDef *> (); $$->push_back($1);}
+Category_PSACL_ARRAY:       Category_PSACL_ARRAY Category_Def_PASCAL    {$$ = $1; $$->push_back($2);}
+                    | Category_Def_PASCAL                   {$$ = new std::vector<TypeDef *> (); $$->push_back($1);}
                     ;
 
-type_definition:      S_ID T_EQUAL type_decl T_SEMI     {$$ = new TypeDef(symtab[$1].id, $3);} // $3 TypeDef
+Category_Def_PASCAL:      PSACL_identify TOKEN_EQUAL Category_TYPE_DECLARTION TOKEN_SEMI     {$$ = new TypeDef(PASCALiconTable[$1].id, $3);} // $3 TypeDef
                     ;
 
-type_decl:            simple_type_decl                  {$$ = $1;} // Type
-                    | array_type_decl                   {$$ = $1;}
-                    | record_type_decl                  {$$ = $1;}
+Category_TYPE_DECLARTION:            Category_TYPE_DECLARTION_EASY                  {$$ = $1;} // Type
+                    | Category_TYPE_LIST_DECLARTION                   {$$ = $1;}
+                    | Category_REC_DECLARTION                  {$$ = $1;}
                     ;
 
-sys_type:             T_CHAR                            {$$ = new Type(TY_CHAR);}
-                    | T_INTEGER                         {$$ = new Type(TY_INTEGER);}
-                    | T_REAL                            {$$ = new Type(TY_REAL);}
-                    | T_BOOLEAN                         {$$ = new Type(TY_BOOLEAN);}
-                    | T_STRING                          {$$ = new Type(TY_STRING);}
+Category_STSTEM_TY:             TOKEN_CHAR                            {$$ = new Type(TY_CHAR);}
+                    | TOKEN_INTEGER                         {$$ = new Type(TY_INTEGER);}
+                    | TOKEN_REAL                            {$$ = new Type(TY_REAL);}
+                    | TOKEN_BOOLEAN                         {$$ = new Type(TY_BOOLEAN);}
+                    | TOKEN_STRING                          {$$ = new Type(TY_STRING);}
                     ;
 
-simple_type_decl:     sys_type                          {$$ = $1;} // Type
-                    | S_ID                              {bool flag = false; for(auto tdef : tmp) {if(tdef->name == symtab[$1].id) {$$ = tdef->type; flag = true;}} if(flag==false) yyerror("Semantics Error: Undefined type");} // we define
-                    // | T_LP name_list T_RP               {$$ = $2;}
-                    | const_value T_DOTDOT const_value  {$$ = new Type(TY_ARRAY); $$->array_start = ((ConstantExp*)$1)->value->val.integer_value; 
+Category_TYPE_DECLARTION_EASY:     Category_STSTEM_TY                          {$$ = $1;} // Type
+                    | PSACL_identify                              {bool T1 = false; for(auto tdef : tmp) {if(tdef->name == PASCALiconTable[$1].id) {$$ = tdef->type; T1 = true;}} if(T1==false) yyerror("Semantics Error: Undefined type");} // we define
+                    // | TOKEN_LP STR_designate_array TOKEN_RP               {$$ = $2;}
+                    | VLU_EXP_PSACL_COSNT TOKEN_DOTDOT VLU_EXP_PSACL_COSNT  {$$ = new Type(TY_ARRAY); $$->array_start = ((ConstantExp*)$1)->value->val.integer_value; 
                                                                                   $$->array_end = ((ConstantExp*)$3)->value->val.integer_value;
                                                         }
                     ;
 
-array_type_decl:      T_ARRAY T_LB simple_type_decl T_RB T_OF type_decl         {$$ = $3; $$->childType.push_back($6);}
+Category_TYPE_LIST_DECLARTION:      TOKEN_ARRAY TOKEN_LB Category_TYPE_DECLARTION_EASY TOKEN_RB TOKEN_OF Category_TYPE_DECLARTION         {$$ = $3; $$->childType.push_back($6);}
                     ;
 
-record_type_decl:     T_RECORD field_decl_list T_END    {$$ = new Type(TY_RECORD); $$->childType = *$2;} // TODO TY_ROCORD type
+Category_REC_DECLARTION:     TOKEN_RECORD TYVAL_FIE_ARRAY_dec TOKEN_END    {$$ = new Type(TY_RECORD); $$->childType = *$2;} // TODO TY_ROCORD type
                     ;
 
-field_decl_list:      field_decl_list field_decl        {$$ = $1; $$->insert($$->end(), $2->begin(), $2->end());} // std::vector<Type *>
-                    | field_decl                        {$$ = new std::vector<Type *>(); $$->insert($$->end(), $1->begin(), $1->end());} 
+TYVAL_FIE_ARRAY_dec:      TYVAL_FIE_ARRAY_dec TYVAL_FIE_PASCAL_dec        {$$ = $1; $$->insert($$->end(), $2->begin(), $2->end());} // std::vector<Type *>
+                    | TYVAL_FIE_PASCAL_dec                        {$$ = new std::vector<Type *>(); $$->insert($$->end(), $1->begin(), $1->end());} 
                     ;
 
-field_decl:           name_list T_COLON type_decl T_SEMI {$$ = new std::vector<Type *>(); for(auto iter : *$1) {Type * tmp = new Type(); tmp->name = iter; tmp->childType.push_back($3); $$->push_back(tmp);}} // std::vector<Type *>
+TYVAL_FIE_PASCAL_dec:           STR_designate_array TOKEN_COLON Category_TYPE_DECLARTION TOKEN_SEMI {$$ = new std::vector<Type *>(); for(auto iter : *$1) {Type * tmp = new Type(); tmp->name = iter; tmp->childType.push_back($3); $$->push_back(tmp);}} // std::vector<Type *>
                 ;   
 
-name_list:            name_list T_COMMA S_ID            {$$ = $1; $$->push_back(symtab[$3].id);}
-                    | S_ID                              {$$ = new std::vector<string>(); $$->push_back(symtab[$1].id);}
+STR_designate_array:            STR_designate_array TOKEN_COMMA PSACL_identify            {$$ = $1; $$->push_back(PASCALiconTable[$3].id);}
+                    | PSACL_identify                              {$$ = new std::vector<string>(); $$->push_back(PASCALiconTable[$1].id);}
                     ; // TODO std::vector<string>
 
-var_part:             T_VAR var_decl_list               {$$ = $2;}
+PSACL_VAR_U:             TOKEN_VAR PSACL_VAR_ARRAY_DE               {$$ = $2;}
                     |/* empty */                        {$$ = new std::vector<VarDef *>();}
                     ;
 
-var_decl_list:        var_decl_list var_decl            {$$ = $1; $$->insert($$->end(), $2->begin(), $2->end());}
-                    | var_decl                          {$$ = $1;} // std::vector<VarDef *>
+PSACL_VAR_ARRAY_DE:        PSACL_VAR_ARRAY_DE PSACL_VAR_NO_DE            {$$ = $1; $$->insert($$->end(), $2->begin(), $2->end());}
+                    | PSACL_VAR_NO_DE                          {$$ = $1;} // std::vector<VarDef *>
                     ;
 
-var_decl:             name_list T_COLON type_decl T_SEMI {$$ = new std::vector<VarDef*>(); for(auto iter : *$1) {$$->push_back(new VarDef(iter, $3));}} // TODO std::vector
+PSACL_VAR_NO_DE:             STR_designate_array TOKEN_COLON Category_TYPE_DECLARTION TOKEN_SEMI {$$ = new std::vector<VarDef*>(); for(auto iter : *$1) {$$->push_back(new VarDef(iter, $3));}} // TODO std::vector
                     ;
 
-routine_part:         routine_part function_decl        {$$ = $1; $$->push_back($2);} // std::vector <FunctionDef *>
-                    | routine_part procedure_decl       {$$ = $1; $$->push_back($2);}
-                    | function_decl                     {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
-                    | procedure_decl                    {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
+informal_PASCAL:         informal_PASCAL F_def_PASCAL_DECLARTION        {$$ = $1; $$->push_back($2);} // std::vector <FunctionDef *>
+                    | informal_PASCAL Pro_def_PASCAL_DECLARTION       {$$ = $1; $$->push_back($2);}
+                    | F_def_PASCAL_DECLARTION                     {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
+                    | Pro_def_PASCAL_DECLARTION                    {$$ = new std::vector<FunctionDef *>; $$->push_back($1);}
                     | %prec "then"                      {$$ = new std::vector<FunctionDef *>();} /* empty */
                     ;
 
-function_decl:        function_head T_SEMI sub_routine T_SEMI                   {$$ = $1; $$->addBody($3->body); $$->addDefine($3->define);} // FunctionDef *
+F_def_PASCAL_DECLARTION:        FUNC_DEF_FIRST_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                   {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);} // FunctionDef *
                     ;
 
-function_head:        T_FUNCTION S_ID parameters T_COLON simple_type_decl       {$$ = $3; $$->name = symtab[$2].id; $$->setReturnType($5); for(auto argt: $$->args_type) {argt->father = $$;}} // TODO                                                                 
+FUNC_DEF_FIRST_PASCAL_H:        TOKEN_FUNCTION PSACL_identify FUNC_PARA_PASCL TOKEN_COLON Category_TYPE_DECLARTION_EASY       {$$ = $3; $$->name = PASCALiconTable[$2].id; $$->setReturnType($5); for(auto argt: $$->args_type) {argt->father = $$;}} // TODO                                                                 
                     ;
 
-procedure_decl:       procedure_head T_SEMI sub_routine T_SEMI                  {$$ = $1; $$->addBody($3->body); $$->addDefine($3->define);}
+Pro_def_PASCAL_DECLARTION:       FUNC_DEF_PROCED_PASCAL_H TOKEN_SEMI sub_regular_array TOKEN_SEMI                  {$$ = $1; $$->BODY_CHANGE_PLUS($3->body); $$->DEFINETION_CHANGE_PLUS($3->define);}
                     ;
 
-procedure_head:       T_PROCEDURE S_ID parameters       {$$ = $3; $$->name = symtab[$2].id;} // TODO
+FUNC_DEF_PROCED_PASCAL_H:       TOKEN_PROCEDURE PSACL_identify FUNC_PARA_PASCL       {$$ = $3; $$->name = PASCALiconTable[$2].id;} // TODO
                     ;
 
-parameters:           T_LP para_decl_list T_RP          {$$ = $2;}
+FUNC_PARA_PASCL:           TOKEN_LP FUNC_PARA_ARRAY_DECLARTION TOKEN_RP          {$$ = $2;}
                     | /* empty */                       {$$ = new FunctionDef("tmp");}
                     ;
 
-para_decl_list:       para_decl_list T_SEMI para_type_list                      {$$ = $1; $$->args_name.insert($$->args_name.end(), $3->args_name.begin(), $3->args_name.end());
+FUNC_PARA_ARRAY_DECLARTION:       FUNC_PARA_ARRAY_DECLARTION TOKEN_SEMI FUNC_PAR_ARRAY_TYPE                      {$$ = $1; $$->args_name.insert($$->args_name.end(), $3->args_name.begin(), $3->args_name.end());
                                                                                         $$->args_type.insert($$->args_type.end(), $3->args_type.begin(), $3->args_type.end());
                                                                                         $$->args_is_formal_parameters.insert($$->args_is_formal_parameters.end(), $3->args_is_formal_parameters.begin(), $3->args_is_formal_parameters.end());}
-                    | para_type_list                                            {$$ = $1;}
+                    | FUNC_PAR_ARRAY_TYPE                                            {$$ = $1;}
                     ;
 
-para_type_list:       var_para_list T_COLON simple_type_decl                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->addArgs(iter, $3, true);}} // true args, type, bool
-                    | val_para_list T_COLON simple_type_decl                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->addArgs(iter, $3, false);}} // false
+FUNC_PAR_ARRAY_TYPE:       STR_PARAMATER_VAR_LIST TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, true);}} // true args, type, bool
+                    | STR_PARAMATER_VAL_ARRAY TOKEN_COLON Category_TYPE_DECLARTION_EASY                    {$$ = new FunctionDef("tmp"); for(auto iter : *$1) {$$->ARGS_CHANGE_PLUS(iter, $3, false);}} // false
                     ;
 
-var_para_list:        T_VAR name_list                   {$$ = $2;} // std::vector <string> procedure true
+STR_PARAMATER_VAR_LIST:        TOKEN_VAR STR_designate_array                   {$$ = $2;} // std::vector <string> procedure true
                     ;
 
-val_para_list:        name_list                         {$$ = $1;} // std::vector <string>
+STR_PARAMATER_VAL_ARRAY:        STR_designate_array                         {$$ = $1;} // std::vector <string>
                     ;
 
-routine_body:         compound_stmt                     {$$ = $1;} // Body
+regular_array_body:         statement_mixture                     {$$ = $1;} // Body
                     ;
 
-compound_stmt:        T_BEGIN stmt_list T_END           {$$ = $2;} // Body
+statement_mixture:        TOKEN_BEGIN statement_array TOKEN_END           {$$ = $2;} // Body
                     ;
 
-stmt_list:            stmt_list stmt T_SEMI             {$$ = $1; for(auto iter : $2->stms) {$$->addStm(iter);}} // Body
+statement_array:            statement_array STATEMENT_PASCAL TOKEN_SEMI             {$$ = $1; for(auto iter : $2->stms) {$$->addStm(iter);}} // Body
                     | /* empty */                       {$$ = new Body();}
                     ;
 
-stmt:                 S_INTEGER T_COLON non_label_stmt  {$$ = new Body();} // TODO
-                    | non_label_stmt                    {$$ = $1;} // Body
+STATEMENT_PASCAL:                 PSACL_int TOKEN_COLON STATEMENT_NON_ICON  {$$ = new Body();} // TODO
+                    | STATEMENT_NON_ICON                    {$$ = $1;} // Body
                     ;
 
-non_label_stmt:       assign_stmt                       {$$ = new Body(); $$->addStm($1);} // Body
-                    | proc_stmt                         {$$ = new Body(); $$->addStm($1);} // Body
-                    | compound_stmt                     {$$ = $1;} // Body
-                    | if_stmt                           {$$ = new Body(); $$->addStm($1);} // Body
-                    | repeat_stmt                       {$$ = new Body(); $$->addStm($1);} // Body
-                    | while_stmt                        {$$ = new Body(); $$->addStm($1);} // Body
-                    | for_stmt                          {$$ = new Body(); $$->addStm($1);} // Body
-                    | case_stmt                         {$$ = new Body(); $$->addStm($1);} // Body
-                    | goto_stmt                         {$$ = new Body(); $$->addStm($1);} // Body
+STATEMENT_NON_ICON:       STATEMENT_ALLOCATE                       {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_procdure                         {$$ = new Body(); $$->addStm($1);} // Body
+                    | statement_mixture                     {$$ = $1;} // Body
+                    | STATEMENT_PASCL_IF                           {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_PASCL_REPEAT                       {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_PASCL_WHILE                        {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_PASCL_FOR                          {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_PASCL_CASES                         {$$ = new Body(); $$->addStm($1);} // Body
+                    | STATEMENT_PASCL_GT                         {$$ = new Body(); $$->addStm($1);} // Body
                     ;
 
-assign_stmt:          S_ID T_ASSIGN expression          {$$ = new AssignStm(new VariableExp(symtab[$1].id), $3);}
-                    | S_ID T_LB expression T_RB T_ASSIGN expression    {$$ = new AssignStm(new BinaryExp(OP_INDEX, new VariableExp(symtab[$1].id), $3), $6);}
-                    | S_ID T_DOT S_ID T_ASSIGN expression              {$$ = new AssignStm(new BinaryExp(OP_DOT, new VariableExp(symtab[$1].id), new VariableExp(symtab[$3].id)), $5);}
+STATEMENT_ALLOCATE:          PSACL_identify TOKEN_ASSIGN EXP_PASCL_express          {$$ = new AssignStm(new VariableExp(PASCALiconTable[$1].id), $3);}
+                    | PSACL_identify TOKEN_LB EXP_PASCL_express TOKEN_RB TOKEN_ASSIGN EXP_PASCL_express    {$$ = new AssignStm(new BinaryExp(OP_INDEX, new VariableExp(PASCALiconTable[$1].id), $3), $6);}
+                    | PSACL_identify TOKEN_DOT PSACL_identify TOKEN_ASSIGN EXP_PASCL_express              {$$ = new AssignStm(new BinaryExp(OP_DOT, new VariableExp(PASCALiconTable[$1].id), new VariableExp(PASCALiconTable[$3].id)), $5);}
                     ;
 
-proc_stmt:            S_ID                              {$$ = new CallStm(symtab[$1].id);}
-                    | S_ID T_LP args_list T_RP          {$$ = new CallStm(symtab[$1].id); for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);} // TODO
-                    | sys_proc T_LP expression_list T_RP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->addArgs(stm);}
-                    | sys_proc T_LP factor T_RP         {$$ = $1; ((CallStm*)$$)->addArgs($3);}
+STATEMENT_procdure:            PSACL_identify                              {$$ = new CallStm(PASCALiconTable[$1].id);}
+                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallStm(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallStm*)$$)->ARGS_CHANGE_PLUS(stm);} // TODO
+                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXPR_ARRAY_VAL TOKEN_RP {$$ = $1; for(auto stm : *$3) ((CallStm*)$$)->ARGS_CHANGE_PLUS(stm);}
+                    | SYSTEM_PASCL_PRODUCRE TOKEN_LP EXP_PASCL_FAT_E TOKEN_RP         {$$ = $1; ((CallStm*)$$)->ARGS_CHANGE_PLUS($3);}
                     ;
 
-sys_proc:             T_WRITE                           {$$ = new CallStm("write");}
-                    | T_WRITELN                         {$$ = new CallStm("writeln");}
-                    | T_READ                            {$$ = new CallStm("read");}
+SYSTEM_PASCL_PRODUCRE:             TOKEN_WRITE                           {$$ = new CallStm("write");}
+                    | TOKEN_WRITELN                         {$$ = new CallStm("writeln");}
+                    | TOKEN_READ                            {$$ = new CallStm("read");}
                     ;
 
-if_stmt:              T_IF expression T_THEN stmt else_clause  {$$ = new IfStm(); ((IfStm*)$$)->setCondition($2); ((IfStm*)$$)->addTrue($4); ((IfStm*)$$)->addFalse($5);}
+STATEMENT_PASCL_IF:              TOKEN_IF EXP_PASCL_express TOKEN_THEN STATEMENT_PASCAL ELSE_PASCAL_ITEM  {$$ = new IfStm(); ((IfStm*)$$)->setCondition($2); ((IfStm*)$$)->addTrue($4); ((IfStm*)$$)->addFalse($5);}
                     ; // IfStm : Exp Body Body
 
-else_clause:          T_ELSE stmt                       {$$ = $2;} // Body
+ELSE_PASCAL_ITEM:          TOKEN_ELSE STATEMENT_PASCAL                       {$$ = $2;} // Body
                     | %prec "then"                      {$$ = new Body();} /* empty */
                     ;
 
-repeat_stmt:          T_REPEAT stmt_list T_UNTIL expression      {$$ = new RepeatStm(); ((RepeatStm*)$$)->setCondition($4);((RepeatStm*)$$)->addLoop($2);}
+STATEMENT_PASCL_REPEAT:          TOKEN_REPEAT statement_array TOKEN_UNTIL EXP_PASCL_express      {$$ = new RepeatStm(); ((RepeatStm*)$$)->setCondition($4);((RepeatStm*)$$)->addLoop($2);}
                     ;
 
-while_stmt:           T_WHILE expression T_DO stmt      {$$ = new WhileStm($2); ((WhileStm*)$$)->addLoop($4);}
+STATEMENT_PASCL_WHILE:           TOKEN_WHILE EXP_PASCL_express TOKEN_DO STATEMENT_PASCAL      {$$ = new WhileStm($2); ((WhileStm*)$$)->addLoop($4);}
                     ;
 
-for_stmt:             T_FOR S_ID T_ASSIGN expression direction expression T_DO stmt {$$ = new ForStm(symtab[$2].id, $4, $6, $5->baseType); ((ForStm*)$$)->addLoop($8);}
+STATEMENT_PASCL_FOR:             TOKEN_FOR PSACL_identify TOKEN_ASSIGN EXP_PASCL_express Category_DIR_PAS EXP_PASCL_express TOKEN_DO STATEMENT_PASCAL {$$ = new ForStm(PASCALiconTable[$2].id, $4, $6, $5->baseType); ((ForStm*)$$)->addLoop($8);}
                     ; // iter Exp int Exp Body
 
-direction:            T_TO                              {$$ = new Type(1);}
-                    | T_DOWNTO                          {$$ = new Type(-1);}
+Category_DIR_PAS:            TOKEN_TO                              {$$ = new Type(1);}
+                    | TOKEN_DOWNTO                          {$$ = new Type(-1);}
                     ;
 
-case_stmt:            T_CASE expression T_OF case_expr_list T_END               {$$ = new CaseStm($2); for(auto situ : *$4) ((CaseStm*)$$)->addSituation(situ);} // TODO
+STATEMENT_PASCL_CASES:            TOKEN_CASE EXP_PASCL_express TOKEN_OF ARRAY_EXPR_PSACL TOKEN_END               {$$ = new CaseStm($2); for(auto situ : *$4) ((CaseStm*)$$)->addSituation(situ);} // TODO
                     ;
 
-case_expr_list:       case_expr_list case_expr          {$$ = $1; ((CaseStm*)$$)->addSituation((Situation*)$2);}
-                    | case_expr                         {$$ = new std::vector<Situation *>(); ((CaseStm*)$$)->addSituation((Situation*)$1);}
+ARRAY_EXPR_PSACL:       ARRAY_EXPR_PSACL EXPR_WITH_PSACL          {$$ = $1; ((CaseStm*)$$)->addSituation((Situation*)$2);}
+                    | EXPR_WITH_PSACL                         {$$ = new std::vector<Situation *>(); ((CaseStm*)$$)->addSituation((Situation*)$1);}
                     ;
 
-case_expr:            const_value T_COLON stmt T_SEMI   {$$ = new Situation(); ((Situation*)$$)->addMatch($1); ((Situation*)$$)->addSolution($3);} // Situation
-                    | S_ID T_COLON stmt T_SEMI          {$$ = new Situation(); ((Situation*)$$)->addMatch(new VariableExp(symtab[$1].id)); ((Situation*)$$)->addSolution($3);} //TODO
+EXPR_WITH_PSACL:            VLU_EXP_PSACL_COSNT TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI   {$$ = new Situation(); ((Situation*)$$)->addMatch($1); ((Situation*)$$)->addSolution($3);} // Situation
+                    | PSACL_identify TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI          {$$ = new Situation(); ((Situation*)$$)->addMatch(new VariableExp(PASCALiconTable[$1].id)); ((Situation*)$$)->addSolution($3);} //TODO
                     ;
 
-goto_stmt:            T_GOTO S_INTEGER                  {$$ = new GotoStm($2);}
+STATEMENT_PASCL_GT:            TOKEN_GOTO PSACL_int                  {$$ = new GotoStm($2);}
                     ;
 
-expression_list:      expression_list T_COMMA expression {$$ = $1; $$->push_back($3);} // std::vector<Exp *>
-                    | expression                        {$$ = new std::vector<Exp *>(); $$->push_back($1);}
+EXPR_ARRAY_VAL:      EXPR_ARRAY_VAL TOKEN_COMMA EXP_PASCL_express {$$ = $1; $$->push_back($3);} // std::vector<Exp *>
+                    | EXP_PASCL_express                        {$$ = new std::vector<Exp *>(); $$->push_back($1);}
                     ;
 
-expression:           expression T_GE expr              {$$ = new BinaryExp(OP_LARGE_EQUAL, $1, $3);}
-                    | expression T_GT expr              {$$ = new BinaryExp(OP_LARGE, $1, $3);}
-                    | expression T_LE expr              {$$ = new BinaryExp(OP_SMALL_EQUAL, $1, $3);}
-                    | expression T_LT expr              {$$ = new BinaryExp(OP_SMALL, $1, $3);}
-                    | expression T_EQUAL expr           {$$ = new BinaryExp(OP_EQUAL, $1, $3);}
-                    | expression T_NE expr              {$$ = new BinaryExp(OP_NOT_EQUAL, $1, $3);}
-                    | expr                              {$$ = $1;}
+EXP_PASCL_express:           EXP_PASCL_express TOKEN_GE EXP_PASCL_exprF              {$$ = new BinaryExp(OP_LARGE_EQUAL, $1, $3);}
+                    | EXP_PASCL_express TOKEN_GT EXP_PASCL_exprF              {$$ = new BinaryExp(OP_LARGE, $1, $3);}
+                    | EXP_PASCL_express TOKEN_LE EXP_PASCL_exprF              {$$ = new BinaryExp(OP_SMALL_EQUAL, $1, $3);}
+                    | EXP_PASCL_express TOKEN_LT EXP_PASCL_exprF              {$$ = new BinaryExp(OP_SMALL, $1, $3);}
+                    | EXP_PASCL_express TOKEN_EQUAL EXP_PASCL_exprF           {$$ = new BinaryExp(OP_EQUAL, $1, $3);}
+                    | EXP_PASCL_express TOKEN_NE EXP_PASCL_exprF              {$$ = new BinaryExp(OP_NOT_EQUAL, $1, $3);}
+                    | EXP_PASCL_exprF                              {$$ = $1;}
                     ;
 
-expr:                 expr T_PLUS term                  {$$ = new BinaryExp(OP_ADD, $1, $3);}
-                    | expr T_MINUS term                 {$$ = new BinaryExp(OP_MINUS, $1, $3);}
-                    | expr T_OR term                    {$$ = new BinaryExp(OP_OR, $1, $3);}
-                    | term                              {$$ = $1;}
+EXP_PASCL_exprF:                 EXP_PASCL_exprF TOKEN_PLUS EXP_PASCL_TERMF                  {$$ = new BinaryExp(OP_ADD, $1, $3);}
+                    | EXP_PASCL_exprF TOKEN_MINUS EXP_PASCL_TERMF                 {$$ = new BinaryExp(OP_MINUS, $1, $3);}
+                    | EXP_PASCL_exprF TOKEN_OR EXP_PASCL_TERMF                    {$$ = new BinaryExp(OP_OR, $1, $3);}
+                    | EXP_PASCL_TERMF                              {$$ = $1;}
                     ;
 
-term:                 term T_MUL factor                 {$$ = new BinaryExp(OP_MULTI, $1, $3);}
-                    | term T_DIV factor                 {$$ = new BinaryExp(OP_RDIV, $1, $3);}
-                    | term T_MOD factor                 {$$ = new BinaryExp(OP_MOD, $1, $3);}
-                    | term T_AND factor                 {$$ = new BinaryExp(OP_AND, $1, $3);}
-                    | factor                            {$$ = $1;}
+EXP_PASCL_TERMF:                 EXP_PASCL_TERMF TOKEN_MUL EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_MULTI, $1, $3);}
+                    | EXP_PASCL_TERMF TOKEN_DIV EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_RDIV, $1, $3);}
+                    | EXP_PASCL_TERMF TOKEN_MOD EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_MOD, $1, $3);}
+                    | EXP_PASCL_TERMF TOKEN_AND EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_AND, $1, $3);}
+                    | EXP_PASCL_FAT_E                            {$$ = $1;}
                     ;
 
-sys_funct:            T_ABS                             {$$ = new CallExp("T_ABS");}
-                    | T_CHR                             {$$ = new CallExp("T_CHR");}
-                    | T_ODD                             {$$ = new CallExp("T_ODD");}
-                    | T_ORD                             {$$ = new CallExp("T_ORD");}
-                    | T_PRED                            {$$ = new CallExp("T_PRED");}
-                    | T_SQR                             {$$ = new CallExp("T_SQR");}
-                    | T_SQRT                            {$$ = new CallExp("T_SQRT");}
-                    | T_SUCC                            {$$ = new CallExp("T_SUCC");}
+CALLEXP_SYSTEM_FUNCTION:            TOKEN_ABS                             {$$ = new CallExp("TOKEN_ABS");}
+                    | TOKEN_CHR                             {$$ = new CallExp("TOKEN_CHR");}
+                    | TOKEN_ODD                             {$$ = new CallExp("TOKEN_ODD");}
+                    | TOKEN_ORD                             {$$ = new CallExp("TOKEN_ORD");}
+                    | TOKEN_PRED                            {$$ = new CallExp("TOKEN_PRED");}
+                    | TOKEN_SQR                             {$$ = new CallExp("TOKEN_SQR");}
+                    | TOKEN_SQRT                            {$$ = new CallExp("TOKEN_SQRT");}
+                    | TOKEN_SUCC                            {$$ = new CallExp("TOKEN_SUCC");}
                     ;
 
 
-factor:               S_ID                              {$$ = new VariableExp(symtab[$1].id);}
-                    | S_ID T_LP args_list T_RP          {$$ = new CallExp(symtab[$1].id); for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
-                    | sys_funct                         {$$ = $1;}
-                    | sys_funct T_LP args_list T_RP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->addArgs(stm);} // args_list is a std::vector<Exp*>
-                    | const_value                       {$$ = $1;}
-                    | T_LP expression T_RP              {$$ = $2;}
-                    | T_NOT factor                      {$$ = new UnaryExp(OP_NOT, $2);}
-                    | T_MINUS factor                    {$$ = new UnaryExp(OP_MINUS, $2);}
-                    | S_ID T_LB expression T_RB         {$$ = new BinaryExp(OP_INDEX, new VariableExp(symtab[$1].id), $3);}
-                    | S_ID T_DOT S_ID                   {$$ = new BinaryExp(OP_DOT, new VariableExp(symtab[$1].id), new VariableExp(symtab[$3].id));}
+EXP_PASCL_FAT_E:               PSACL_identify                              {$$ = new VariableExp(PASCALiconTable[$1].id);}
+                    | PSACL_identify TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP          {$$ = new CallExp(PASCALiconTable[$1].id); for(auto stm : *$3) ((CallExp*)$$)->ARGS_CHANGE_PLUS(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
+                    | CALLEXP_SYSTEM_FUNCTION                         {$$ = $1;}
+                    | CALLEXP_SYSTEM_FUNCTION TOKEN_LP EXPR_ARG_VAL_ARRAY TOKEN_RP     {$$ = $1; for(auto stm : *$3) ((CallExp*)$$)->ARGS_CHANGE_PLUS(stm);} // EXPR_ARG_VAL_ARRAY is a std::vector<Exp*>
+                    | VLU_EXP_PSACL_COSNT                       {$$ = $1;}
+                    | TOKEN_LP EXP_PASCL_express TOKEN_RP              {$$ = $2;}
+                    | TOKEN_NOT EXP_PASCL_FAT_E                      {$$ = new UnaryExp(OP_NOT, $2);}
+                    | TOKEN_MINUS EXP_PASCL_FAT_E                    {$$ = new UnaryExp(OP_MINUS, $2);}
+                    | PSACL_identify TOKEN_LB EXP_PASCL_express TOKEN_RB         {$$ = new BinaryExp(OP_INDEX, new VariableExp(PASCALiconTable[$1].id), $3);}
+                    | PSACL_identify TOKEN_DOT PSACL_identify                   {$$ = new BinaryExp(OP_DOT, new VariableExp(PASCALiconTable[$1].id), new VariableExp(PASCALiconTable[$3].id));}
                     ;
 
-args_list:            args_list T_COMMA expression      {$$ = $1; $$->push_back($3);} // std::vector<Exp*>
-                    | expression                        {$$ = new std::vector<Exp *>; $$->push_back($1);}
+EXPR_ARG_VAL_ARRAY:            EXPR_ARG_VAL_ARRAY TOKEN_COMMA EXP_PASCL_express      {$$ = $1; $$->push_back($3);} // std::vector<Exp*>
+                    | EXP_PASCL_express                        {$$ = new std::vector<Exp *>; $$->push_back($1);}
                     ;
 
 %%
 
-int doyyparse(char *file) {
+int doyyparse(char *NAMEFILE) {
     FILE *fp;
-    if ((fp = fopen(file, "r")) != NULL)
+
+    if ((fp = fopen(NAMEFILE, "r")) != NULL)
         yyin = fp;
     else
         return -1;
