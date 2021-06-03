@@ -92,3 +92,5 @@ print_output: fmt clean test
 	@cat "test/nested_if(lli output).txt"
 	@echo "\ntypedef:"
 	@sed -n '1,4p' "test/typedef(lli output).txt"
+	@echo "\nbubble:"
+	@cat "test/bubble_sort(lli output).txt"
