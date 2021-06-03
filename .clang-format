@@ -16,7 +16,7 @@ AlwaysBreakTemplateDeclarations: true
 AlignAfterOpenBracket: DontAlign
 AllowShortCaseLabelsOnASingleLine: true
 BreakBeforeBraces: Attach
-ColumnLimit: 94
+ColumnLimit: 120
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 BreakInheritanceList: BeforeColon

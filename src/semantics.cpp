@@ -8,11 +8,11 @@ void yyerror(Base *err_node, const char *info) {
 }
 
 bool isTypeBoolean(Type *type) {
-    return type->baseType == TY_BOOLEAN;
+    return type->baseType == TY_BOOL;
 }
 
 bool isTypeInt(Type *type) {
-    return type->baseType == TY_INTEGER;
+    return type->baseType == TY_INT;
 }
 
 bool isTypeReal(Type *type) {
@@ -37,10 +37,10 @@ bool isTypeString(Type *type) {
 
 bool canFillTypeWithValue(Type *type, Value *value) {
     switch (type->baseType) {
-        case TY_REAL: return value->baseType == TY_INTEGER || value->baseType == TY_REAL;
-        case TY_INTEGER:
+        case TY_REAL: return value->baseType == TY_INT || value->baseType == TY_REAL;
+        case TY_INT:
         case TY_CHAR:
-        case TY_BOOLEAN: return value->baseType == type->baseType;
+        case TY_BOOL: return value->baseType == type->baseType;
         case TY_STRING: return value->baseType == TY_CHAR || value->baseType == TY_STRING;
         case TY_ARRAY:
             if (value->baseType != TY_ARRAY)
@@ -67,10 +67,10 @@ bool canFillTypeWithValue(Type *type, Value *value) {
 Type *generateTypeByValue(Value *value) {
     Type *type;
     switch (value->baseType) {
-        case TY_INTEGER:
+        case TY_INT:
         case TY_REAL:
         case TY_CHAR:
-        case TY_BOOLEAN:
+        case TY_BOOL:
         case TY_STRING: type = new Type(value->baseType); break;
         case TY_RECORD:
             type = new Type(value->baseType);
@@ -401,8 +401,7 @@ bool CaseStm::checkSemantics() {
         for (auto match_item : situation->caseVec)
             if (match_item->returnVal == nullptr) {
                 char info[200];
-                sprintf(info,
-                    "Semantics Error: The match items in case statement must be constant.");
+                sprintf(info, "Semantics Error: The match items in case statement must be constant.");
                 yyerror(this, info);
                 isLegal = false;
                 return isLegal;
@@ -425,12 +424,10 @@ bool CaseStm::checkSemantics() {
         i = false;
     for (auto situation : situations)
         for (Exp *match_item : situation->caseVec) {
-            int id = is_int ? (match_item->returnVal->val.intVal + 32768)
-                            : ((int)match_item->returnVal->val.charVal);
+            int id = is_int ? (match_item->returnVal->val.intVal + 32768) : ((int)match_item->returnVal->val.charVal);
             if (flag[id]) {
                 char info[200];
-                sprintf(info,
-                    "Semantics Error: The match items in case statement must be different.");
+                sprintf(info, "Semantics Error: The match items in case statement must be different.");
                 yyerror(this, info);
                 isLegal = false;
                 return isLegal;
@@ -557,7 +554,7 @@ bool UnaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_ABS: {
@@ -601,7 +598,7 @@ bool UnaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_CHR: {
@@ -623,7 +620,7 @@ bool UnaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INT);
                 }
             } break;
             case OP_SQR: {
@@ -678,7 +675,7 @@ bool BinaryExp::checkSemantics() {
                     if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
                         returnType = new Type(TY_REAL);
                     else
-                        returnType = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INT);
                 }
             } break;
             case OP_MINUS: {
@@ -696,7 +693,7 @@ bool BinaryExp::checkSemantics() {
                     if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
                         returnType = new Type(TY_REAL);
                     else
-                        returnType = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INT);
                 }
             } break;
             case OP_MULTI: {
@@ -714,7 +711,7 @@ bool BinaryExp::checkSemantics() {
                     if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
                         returnType = new Type(TY_REAL);
                     else
-                        returnType = new Type(TY_INTEGER);
+                        returnType = new Type(TY_INT);
                 }
             } break;
             case OP_RDIV: {
@@ -744,7 +741,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INT);
                 }
             } break;
             case OP_MOD: {
@@ -758,7 +755,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_INTEGER);
+                    returnType = new Type(TY_INT);
                 }
             } break;
             case OP_AND: {
@@ -772,7 +769,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_OR: {
@@ -786,7 +783,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_SMALL: {
@@ -803,7 +800,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_LARGE: {
@@ -820,7 +817,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_SMALL_EQUAL: {
@@ -837,7 +834,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_LARGE_EQUAL: {
@@ -854,7 +851,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_EQUAL: {
@@ -871,7 +868,7 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_NOT_EQUAL: {
@@ -888,18 +885,16 @@ bool BinaryExp::checkSemantics() {
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    returnType = new Type(TY_BOOLEAN);
+                    returnType = new Type(TY_BOOL);
                 }
             } break;
             case OP_DOT: {
                 if (isTypeRecord(operand1->returnType))
                     if (canFindChild(operand1->returnType, ((VariableExp *)operand2)->name))
-                        returnType = copyType(findChildType(
-                            operand1->returnType, ((VariableExp *)operand2)->name));
+                        returnType = copyType(findChildType(operand1->returnType, ((VariableExp *)operand2)->name));
                     else {
                         char info[200];
-                        sprintf(info,
-                            "Semantics Error: Cannot find child named %s in this record.",
+                        sprintf(info, "Semantics Error: Cannot find child named %s in this record.",
                             (((VariableExp *)operand2)->name).c_str());
                         yyerror(this, info);
                         isLegal = false;

@@ -58,8 +58,7 @@ void tree::Situation::addSolution(Body *body) {
     }
 }
 
-void tree::FuncDef::addArgvs(
-    const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
+void tree::FuncDef::addArgvs(const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
     arg_type->father = this;
     argNameVec.push_back(arg_name);
     argTypeVec.push_back(arg_type);
@@ -219,13 +218,12 @@ tree::Type *tree::copyType(Type *origin) {
 bool tree::isSameType(Type *type1, Type *type2) {
     if (type1->baseType == type2->baseType)
         switch (type1->baseType) {
-            case TY_INTEGER:
+            case TY_INT:
             case TY_CHAR:
             case TY_REAL:
-            case TY_BOOLEAN: return true;
+            case TY_BOOL: return true;
             case TY_ARRAY:
-                if (type1->indexEnd - type2->indexStart ==
-                    type2->indexEnd - type2->indexStart)
+                if (type1->indexEnd - type2->indexStart == type2->indexEnd - type2->indexStart)
                     return isSameType(type1->childType[0], type2->childType[0]);
                 break;
             case TY_RECORD:

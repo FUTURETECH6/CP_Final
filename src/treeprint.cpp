@@ -5,7 +5,7 @@
 std::string print_rec(tree::Value *value, int layer) {
     std::string str;
     switch (value->baseType) {
-        case TY_INTEGER: {
+        case TY_INT: {
             char val[10];
             sprintf(val, "%d", value->val.intVal);
             str.append(val);
@@ -20,7 +20,7 @@ std::string print_rec(tree::Value *value, int layer) {
             sprintf(val, "%c", value->val.charVal);
             str.append(val);
         } break;
-        case TY_BOOLEAN: {
+        case TY_BOOL: {
             str.append(value->val.boolVal ? "true" : "false");
         } break;
         case TY_ARRAY:
@@ -70,8 +70,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 if (node->constDef.size() > 0) {
                     for (auto stm : node->constDef) {
                         str.append("\n");
-                        if (node->typeDef.size() > 0 || node->varDef.size() > 0 ||
-                            node->funcDef.size() > 0)
+                        if (node->typeDef.size() > 0 || node->varDef.size() > 0 || node->funcDef.size() > 0)
                             str.append(print_tab(layer));
                         else
                             str.append(print_tab(layer));
@@ -408,7 +407,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
             case ND_TYPE: {
                 auto *node = (tree::Type *)ori_node;
                 switch (node->baseType) {
-                    case TY_INTEGER: {
+                    case TY_INT: {
                         str.append("integer");
                     } break;
                     case TY_REAL: {
@@ -417,7 +416,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     case TY_CHAR: {
                         str.append("char");
                     } break;
-                    case TY_BOOLEAN: {
+                    case TY_BOOL: {
                         str.append("boolean");
                     } break;
                     case TY_ARRAY: {
@@ -447,8 +446,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     } break;
 
                     default: {
-                        str.append(
-                            "\"There is something wrong. The type cannot be recognised.\"");
+                        str.append("\"There is something wrong. The type cannot be recognised.\"");
                     }
                 }
             } break;

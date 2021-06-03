@@ -115,16 +115,16 @@ COSNT_PSACL_ARRAY:      COSNT_PSACL_ARRAY PSACL_identify TOKEN_EQUAL VLU_EXP_PSA
                     | PSACL_identify TOKEN_EQUAL VLU_EXP_PSACL_COSNT TOKEN_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(PASCALiconTable[$1].id, (Exp*)$3));}
                     ;
 
-VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INTEGER; value->val.intVal = $1; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_INTEGER);} // ConstantExp可能有转化问题
+VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INT; value->val.intVal = $1; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_INT);} // ConstantExp可能有转化问题
                     | PSACL_realnum                            {Value* value= new Value; value->baseType = TY_REAL; value->val.realVal = atof(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_REAL);}
                     | PSACL_character                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.charVal = PASCALiconTable[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_CHAR);}
                     | PSACL_str                          {Value* value= new Value; value->baseType = TY_STRING; value->val.stringVal = new string(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_STRING);}
                     | EXP_SYSTEM_CONTS                           {$$ = $1;}
                     ;
 
-EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolVal = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOLEAN);}
-                    | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOLEAN; value->val.boolVal = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOLEAN);}
-                    | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INTEGER; value->val.intVal = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_INTEGER);}
+EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOL; value->val.boolVal = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOL);}
+                    | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOL; value->val.boolVal = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOL);}
+                    | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INT; value->val.intVal = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_INT);}
                     ;
 
 Category_PSACL:            TOKEN_TYPE Category_PSACL_ARRAY             {$$ = $2; tmp = *$$;}
@@ -144,9 +144,9 @@ Category_TYPE_DECLARTION:            Category_TYPE_DECLARTION_EASY              
                     ;
 
 Category_STSTEM_TY:             TOKEN_CHAR                            {$$ = new Type(TY_CHAR);}
-                    | TOKEN_INTEGER                         {$$ = new Type(TY_INTEGER);}
+                    | TOKEN_INTEGER                         {$$ = new Type(TY_INT);}
                     | TOKEN_REAL                            {$$ = new Type(TY_REAL);}
-                    | TOKEN_BOOLEAN                         {$$ = new Type(TY_BOOLEAN);}
+                    | TOKEN_BOOLEAN                         {$$ = new Type(TY_BOOL);}
                     | TOKEN_STRING                          {$$ = new Type(TY_STRING);}
                     ;
 

@@ -2,7 +2,6 @@
 #define CODEGEN_H
 
 #include <iostream>
-#include <typeinfo>
 
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
@@ -42,6 +41,8 @@ struct CodeGenBlk {
     CodeGenBlk *parent;
     std::map<std::string, tree::Exp *> constMap;
 
+    CodeGenBlk(llvm::BasicBlock *_block) : block(_block) {}
+
   public:
     std::map<std::string, tree::Type *> typeMap;
 };
@@ -51,6 +52,8 @@ class CodeGenContext {
     std::stack<CodeGenBlk *> CodeGenStack;
     llvm::Function *funcMain;
     llvm::Function *funcCur;
+
+    llvm::Function *createPrintf();
 
   public:
     llvm::Module *pModule = new llvm::Module("main", globalContext);
@@ -63,24 +66,22 @@ class CodeGenContext {
     llvm::Type *getLlvmType(tree::Type *type);
     llvm::Value *getValue(std::string name);
 
-    llvm::Function *getCurFunc() { return this->funcCur; }
-    void setCurFunc(llvm::Function *func) { this->funcCur = func; }
-    llvm::BasicBlock *getCurBlk() { return CodeGenStack.top()->block; }
-    CodeGenBlk *getCurCodeGenBlk() { return CodeGenStack.top(); }
-    void pushBlock(llvm::BasicBlock *block) {
-        std::cout << "pushing..." << std::endl;
-        CodeGenStack.push(new CodeGenBlk());
-        CodeGenStack.top()->block = block;
-    }
-    void popBlock() {
-        std::cout << "poping..." << std::endl;
-        CodeGenBlk *top = CodeGenStack.top();
+    // For record, find its index
+    static int getRecordIndex(tree::Type *recType, std::string name);
+    // Get array[offset]'s addr
+    static llvm::Value *getAryAddr(tree::BinaryExp *exp, CodeGenContext *context);
+
+    inline llvm::Function *getCurFunc() { return this->funcCur; }
+    inline void setCurFunc(llvm::Function *func) { this->funcCur = func; }
+    inline llvm::BasicBlock *getCurBasicBlk() { return CodeGenStack.top()->block; }
+    inline CodeGenBlk *getCurCodeGenBlk() { return CodeGenStack.top(); }
+    inline void pushBlock(llvm::BasicBlock *block) { CodeGenStack.push(new CodeGenBlk(block)); }
+    inline void popBlock() {
+        auto top = CodeGenStack.top();
         CodeGenStack.pop();
         delete top;
     }
-    void insertConst(std::string name, tree::Exp *_const) {
-        CodeGenStack.top()->constMap[name] = _const;
-    }
+    inline void addConst(std::string name, tree::Exp *_const) { CodeGenStack.top()->constMap[name] = _const; }
 };
 
 #endif

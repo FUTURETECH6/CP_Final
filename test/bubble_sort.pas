@@ -1,7 +1,6 @@
 
 program bumble_sort;
 
-
 type 
   ar = array [0..9] of integer;
 
@@ -30,7 +29,6 @@ begin
           a[j] := a[j+1];
           a[j+1] := temp;
         end;
-
 
   for i := 0 to 9 do
     write(a[i]);

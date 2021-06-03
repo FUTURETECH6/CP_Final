@@ -65,7 +65,7 @@ enum Node_Type {
     ND_TYPE
 };
 
-enum Val_Type { TY_INTEGER, TY_REAL, TY_CHAR, TY_BOOLEAN, TY_STRING, TY_ARRAY, TY_RECORD };
+enum Val_Type { TY_INT, TY_REAL, TY_CHAR, TY_BOOL, TY_STRING, TY_ARRAY, TY_RECORD };
 
 std::string getOpNameByID(int id);
 extern "C" void yyerror(const char *info);
