@@ -1,6 +1,6 @@
 .PHONY: all clean scan test fmt progs dirs clean_tmp clean_test print_output
 
-TARGET = MiniPascal
+TARGET = PasGo
 
 # Config Env
 LLVM_DIR = /usr/lib/llvm-8

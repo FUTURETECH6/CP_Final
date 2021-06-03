@@ -24,7 +24,7 @@ make
 Test:
 
 ```bash
-./MiniPascal <path/to/pascal/file>
+./PasGo <path/to/pascal/file>
 ```
 
 Build and test:

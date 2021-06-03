@@ -11,7 +11,7 @@ test/*
 *.o
 *.zip
 
-MiniPascal
+PasGo
 *.bc
 *.tree
 compile_commands.json
