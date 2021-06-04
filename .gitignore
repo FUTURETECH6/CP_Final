@@ -15,3 +15,5 @@ PasGo
 *.bc
 *.tree
 compile_commands.json
+
+tgt

@@ -63,18 +63,22 @@ clean_tmp:
 clean_test:
 	@rm -f a.bc* a.tree
 	@rm -f test/*.bc test/*.ll test/*.lli test/*.s test/*.tree test/*.txt
+	@rm -rf tgt
 
 scan:
 	intercept-build make && analyze-build
 
+dir=tgt/$$i/
 test: all
-	for i in $(patsubst %.pas, %, $(wildcard test/*.pas)) ; do \
-		./$(TARGET) $$i.pas > "$$i(debug output).txt" ; \
-		mv a.bc $$i.bc ; \
-		mv a.tree $$i.tree ; \
-		$(LLVM_LLI) $$i.bc > "$$i(lli output).txt" ;  \
-		$(LLVM_DIS) -o $$i.ll $$i.bc ;  \
-		$(LLVM_LLC) -o $$i.s $$i.ll -march=x86-64 ; \
+	for i in $(notdir $(patsubst %.pas, %, $(wildcard ./test/*.pas))) ; do \
+		echo $$i ; \
+		mkdir -p ${dir} ; \
+		./$(TARGET) test/$$i.pas > "${dir}/$$i(debug output).txt" ; \
+		mv a.bc ${dir}/$$i.bc ; \
+		mv a.tree ${dir}/$$i.tree ; \
+		$(LLVM_LLI) ${dir}/$$i.bc > "${dir}/$$i(lli output).txt" ;  \
+		$(LLVM_DIS) -o ${dir}/$$i.ll ${dir}/$$i.bc ;  \
+		$(LLVM_LLC) -o ${dir}/$$i.s ${dir}/$$i.ll -march=x86-64 ; \
 	done
 
 fmt:
