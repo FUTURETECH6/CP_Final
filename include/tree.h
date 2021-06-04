@@ -385,7 +385,7 @@ namespace tree {
         llvm::Value *codeGen(CodeGenContext *context);
     };
 
-    void printTree(std::string filename, Base *root);
+    void visualizeTree(std::string filename, Base *root);
     Type *copyType(Type *origin);
     bool isSameType(Type *type1, Type *type2);
     Base *findName(const std::string &name, Base *node);

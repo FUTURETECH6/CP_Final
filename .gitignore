@@ -14,6 +14,9 @@ test/*
 PasGo
 *.bc
 *.tree
+*.ll
+*.s
+*.txt
 compile_commands.json
 
 tgt

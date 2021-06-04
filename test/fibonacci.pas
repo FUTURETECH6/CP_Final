@@ -1,8 +1,6 @@
 
 program fibonacci;
 
-var 
-  i : integer;
 
 function fib(a : integer): integer;
 begin
@@ -24,6 +22,5 @@ begin
 end;
 
 begin
-  i := fib(20);
-  writeln(i);
+  writeln(fib(10));
 end.

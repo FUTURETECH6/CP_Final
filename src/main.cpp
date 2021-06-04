@@ -7,18 +7,20 @@
 extern int doyyparse(char *file);
 extern tree::Program *treeRoot;
 
+
 int main(int argc, char **argv) {
+    using namespace std;
     if (doyyparse(argv[1])) {
-        throw std::runtime_error("No such file or directory");
+        throw runtime_error("No such file or directory");
         return -1;
     }
-    std::cout << "after yyparse()" << std::endl;
-    tree::printTree("a.tree", treeRoot);
+    cout << "after yyparse()" << endl;
+    tree::visualizeTree("a.tree", treeRoot);
 
     if (treeRoot->checkSemantics() == false) {
         return 0;
     }
-    std::cout << "semantics passed" << std::endl;
+    cout << "semantics passed" << endl;
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTarget();
