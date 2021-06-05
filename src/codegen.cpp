@@ -462,7 +462,7 @@ llvm::Value *tree::CallStm::codeGen(CodeGenContext *context) {
                 std::cout << "[Warning] string print is not supported" << std::endl;
                 exit(0);
             } else {
-                std::cout << "[Error] Unknown type for printf" << std::endl;
+                std::cout << "[Error] Unknown type for print" << std::endl;
                 exit(0);
             }
         }
