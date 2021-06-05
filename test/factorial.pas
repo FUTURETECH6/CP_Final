@@ -9,7 +9,7 @@ var
   ar : array [0..5] of integer;
 
 
-begin  
+begin
   ar[5] := 6;
   ar[4] := 5;
   ar[3] := 4;

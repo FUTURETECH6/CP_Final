@@ -140,7 +140,7 @@ namespace tree {
         std::vector<Exp *> caseVec;
         Body *solution = nullptr;
         Situation() : Base(ND_SITUATION) {}
-        void addMatch(Exp *);
+        void addCase(Exp *);
         void addSolution(Body *);
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;
@@ -373,14 +373,14 @@ namespace tree {
 
     class Value {
       public:
-        int baseType;  // 0: int 1: real 2: char 3: boolean 5: array 6: record
+        int baseType;  // TY_INT, TY_REAL, TY_CHAR, TY_BOOL, TY_STRING, TY_ARRAY, TY_RECORD
         union returnVal {
             int intVal;
             float realVal;
             char charVal;
             bool boolVal;
             std::string *stringVal;
-            std::vector<Value *> *childValVec;  // a vector of the value of children
+            std::vector<Value *> *childValVec;  // a vector of the value of elements
         } val;
         llvm::Value *codeGen(CodeGenContext *context);
     };

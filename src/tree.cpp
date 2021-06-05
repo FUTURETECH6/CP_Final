@@ -46,7 +46,7 @@ void tree::Body::addStm(Stm *stm) {
     stms.push_back(stm);
 }
 
-void tree::Situation::addMatch(Exp *exp) {
+void tree::Situation::addCase(Exp *exp) {
     exp->father = this;
     caseVec.push_back(exp);
 }

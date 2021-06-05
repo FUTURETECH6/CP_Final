@@ -6,14 +6,15 @@ var
 
 function gcd(a, b: integer): integer;
 
-var
+var 
   res : integer;
 begin
   if b <> 0 then
     begin
       gcd := gcd(b , a % b);
     end
-  else begin
+  else
+    begin
       gcd := a;
     end;
 end;

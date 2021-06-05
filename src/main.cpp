@@ -7,7 +7,6 @@
 extern int doyyparse(char *file);
 extern tree::Program *treeRoot;
 
-
 int main(int argc, char **argv) {
     using namespace std;
     if (doyyparse(argv[1])) {

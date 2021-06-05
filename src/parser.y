@@ -58,7 +58,7 @@ std::vector<tree::TypeDef *> tmp;
 }
 
 %token <iVal> PSACL_identify PSACL_int PSACL_realnum PSACL_character PSACL_str 
-%type <tVal> EXPR_WITH_PSACL
+%type <tVal> EXPR_CASE_PSACL
 %type <root> PASCAL_PROGRAM PASCAL_HEAD_PROGRAM
 %type <rout> regular_array sub_regular_array
 %type <define> regular_array_head
@@ -115,14 +115,14 @@ COSNT_PSACL_ARRAY:      COSNT_PSACL_ARRAY PSACL_identify TOKEN_EQUAL VLU_EXP_PSA
                     | PSACL_identify TOKEN_EQUAL VLU_EXP_PSACL_COSNT TOKEN_SEMI   {$$ = new std::vector<ConstDef *>(); $$->push_back(new ConstDef(PASCALiconTable[$1].id, (Exp*)$3));}
                     ;
 
-VLU_EXP_PSACL_COSNT:          PSACL_int                         {Value* value= new Value; value->baseType = TY_INT; value->val.intVal = $1; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_INT);} // ConstantExp可能有转化问题
+VLU_EXP_PSACL_COSNT:    PSACL_int  {Value* value= new Value; value->baseType = TY_INT; value->val.intVal = $1; $$ = new ConstantExp(value); $$->returnType = new Type(TY_INT);} // ConstantExp可能有转化问题
                     | PSACL_realnum                            {Value* value= new Value; value->baseType = TY_REAL; value->val.realVal = atof(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_REAL);}
                     | PSACL_character                            {Value* value= new Value; value->baseType = TY_CHAR; value->val.charVal = PASCALiconTable[$1].id[0]; $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_CHAR);}
                     | PSACL_str                          {Value* value= new Value; value->baseType = TY_STRING; value->val.stringVal = new string(PASCALiconTable[$1].id); $$ = new ConstantExp(value); ((Exp*)$$)->returnType = new Type(TY_STRING);}
                     | EXP_SYSTEM_CONTS                           {$$ = $1;}
                     ;
 
-EXP_SYSTEM_CONTS:              TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOL; value->val.boolVal = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOL);}
+EXP_SYSTEM_CONTS:     TOKEN_TRUE                            {Value* value= new Value; value->baseType = TY_BOOL; value->val.boolVal = true; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOL);}
                     | TOKEN_FALSE                           {Value* value= new Value; value->baseType = TY_BOOL; value->val.boolVal = false; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_BOOL);}
                     | TOKEN_MAXINT                          {Value* value= new Value; value->baseType = TY_INT; value->val.intVal = 32767; $$ = new ConstantExp(value); ((ConstantExp*)$$)->returnType = new Type(TY_INT);}
                     ;
@@ -289,12 +289,12 @@ Category_DIR_PAS:            TOKEN_TO                              {$$ = new Typ
 STATEMENT_PASCL_CASES:            TOKEN_CASE EXP_PASCL_express TOKEN_OF ARRAY_EXPR_PSACL TOKEN_END               {$$ = new CaseStm($2); for(auto situ : *$4) ((CaseStm*)$$)->addSituation(situ);} // TODO
                     ;
 
-ARRAY_EXPR_PSACL:       ARRAY_EXPR_PSACL EXPR_WITH_PSACL          {$$ = $1; ((CaseStm*)$$)->addSituation((Situation*)$2);}
-                    | EXPR_WITH_PSACL                         {$$ = new std::vector<Situation *>(); ((CaseStm*)$$)->addSituation((Situation*)$1);}
+ARRAY_EXPR_PSACL:       ARRAY_EXPR_PSACL EXPR_CASE_PSACL          {$$ = $1; ((CaseStm*)$$)->addSituation((Situation*)$2);}
+                    | EXPR_CASE_PSACL                         {$$ = new std::vector<Situation *>(); ((CaseStm*)$$)->addSituation((Situation*)$1);}
                     ;
 
-EXPR_WITH_PSACL:            VLU_EXP_PSACL_COSNT TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI   {$$ = new Situation(); ((Situation*)$$)->addMatch($1); ((Situation*)$$)->addSolution($3);} // Situation
-                    | PSACL_identify TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI          {$$ = new Situation(); ((Situation*)$$)->addMatch(new VariableExp(PASCALiconTable[$1].id)); ((Situation*)$$)->addSolution($3);} //TODO
+EXPR_CASE_PSACL:            VLU_EXP_PSACL_COSNT TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI   {$$ = new Situation(); ((Situation*)$$)->addCase($1); ((Situation*)$$)->addSolution($3);} // Situation
+                    | PSACL_identify TOKEN_COLON STATEMENT_PASCAL TOKEN_SEMI          {$$ = new Situation(); ((Situation*)$$)->addCase(new VariableExp(PASCALiconTable[$1].id)); ((Situation*)$$)->addSolution($3);} //TODO
                     ;
 
 STATEMENT_PASCL_GT:            TOKEN_GOTO PSACL_int                  {$$ = new GotoStm($2);}

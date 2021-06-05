@@ -21,7 +21,7 @@ CXX = $(LLVM_CLANG)
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
-CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -O0
+CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -O0 -g
 LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs
@@ -68,33 +68,22 @@ clean_test:
 scan:
 	intercept-build make && analyze-build
 
-dir=tgt/$$i/
+tgt_dir=tgt/$$i/
 test: all
-	for i in $(notdir $(patsubst %.pas, %, $(wildcard ./test/*.pas))) ; do \
+	for i in $(notdir $(patsubst %.pas, %, $(wildcard test/*.pas))) ; do \
 		echo $$i ; \
-		mkdir -p ${dir} ; \
-		./$(TARGET) test/$$i.pas > "${dir}/$$i(debug output).txt" ; \
-		mv a.bc ${dir}/$$i.bc ; \
-		mv a.tree ${dir}/$$i.tree ; \
-		$(LLVM_LLI) ${dir}/$$i.bc > "${dir}/$$i(lli output).txt" ;  \
-		$(LLVM_DIS) -o ${dir}/$$i.ll ${dir}/$$i.bc ;  \
-		$(LLVM_LLC) -o ${dir}/$$i.s ${dir}/$$i.ll -march=x86-64 ; \
+		mkdir -p ${tgt_dir} ; \
+		./$(TARGET) test/$$i.pas > "${tgt_dir}/$$i(debug output).txt" ; \
+		mv a.bc ${tgt_dir}/$$i.bc ; \
+		mv a.tree ${tgt_dir}/$$i.tree ; \
+		$(LLVM_LLI) ${tgt_dir}/$$i.bc > "${tgt_dir}/$$i(lli output).txt" ;  \
+		$(LLVM_DIS) -o ${tgt_dir}/$$i.ll ${tgt_dir}/$$i.bc ;  \
+		$(LLVM_LLC) -o ${tgt_dir}/$$i.s ${tgt_dir}/$$i.ll -march=x86-64 ; \
 	done
 
 fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
 	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}
 
-print_output: fmt clean test
-	@echo "\nfib:"
-	@cat "test/fibonacci(lli output).txt"
-	@echo "\ngcd:"
-	@cat "test/gcd(lli output).txt"
-	@echo "\nglobal_var:"
-	@cat "test/global_var(lli output).txt"
-	@echo "\nnested_if:"
-	@cat "test/nested_if(lli output).txt"
-	@echo "\ntypedef:"
-	@sed -n '1,4p' "test/typedef(lli output).txt"
-	@echo "\nbubble:"
-	@cat "test/bubble_sort(lli output).txt"
+print_output: fmt test
+	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'

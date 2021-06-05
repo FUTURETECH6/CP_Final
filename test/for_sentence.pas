@@ -1,3 +1,4 @@
+
 program for_sentence;
 
 var 
@@ -16,5 +17,3 @@ begin
   res := add(7);
   writeln(res);
 end.
-
-
