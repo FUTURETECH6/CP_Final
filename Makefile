@@ -21,7 +21,7 @@ CXX = $(LLVM_CLANG)
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
-CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -O0 -g
+CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -Ofast
 LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs
@@ -85,5 +85,5 @@ fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
 	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}
 
-print_output: fmt test
-	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'
+print_output: fmt clean test
+	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'
