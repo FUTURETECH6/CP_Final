@@ -762,7 +762,7 @@ bool BinaryExp::checkSemantics() {
                 isLegal &= operand2->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeChar(operand1->returnType) || !isTypeChar(operand2->returnType)) {
+                if (!isTypeBoolean(operand1->returnType) || !isTypeBoolean(operand2->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'and\' must be boolean.");
