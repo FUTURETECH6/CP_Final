@@ -21,7 +21,7 @@ CXX = $(LLVM_CLANG)
 INCLUDE = -Iinclude -Ibuild
 LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
 
-CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags)  -std=c++11 ${INCLUDE} -Ofast
+CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags) -std=c++11 ${INCLUDE} -O0 -g
 LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
 
 all: dirs progs

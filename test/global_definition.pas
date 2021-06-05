@@ -22,5 +22,4 @@ end;
 begin
   writeln(gcd(28 , 7));
   writeln(gcd(88 , 11));
-end
-.
+end.

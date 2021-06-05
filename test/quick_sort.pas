@@ -1,39 +1,44 @@
 
 program quick_sort;
 
-
-var
+var 
   a: array[0..9] of integer;
-  I: integer;
+  i: integer;
 
-procedure QuickSort(ALo, AHi: integer);
-var
-  Lo, Hi, Pivot, T: integer;
+procedure Quicksort(Left, Right: integer);
+
+var 
+  ptrLeft, ptrRight, Pivot, Temp: integer;
 begin
-  Lo := ALo;
-  Hi := AHi;
-  Pivot := a[(Lo + Hi) div 2];
-  repeat
-    while a[Lo] < Pivot do
-      Lo:=Lo+1 ;
-    while a[Hi] > Pivot do
-      Hi:=Hi-1 ;
-    if Lo <= Hi then
-    begin
-      T := a[Lo];
-      a[Lo] := a[Hi];
-      a[Hi] := T;
-      Lo:=Lo+1 ;
-      Hi:=Hi-1 ;
-    end;
-  until Lo > Hi;
-  if Hi > ALo then
-    QuickSort(ALo, Hi) ;
-  if Lo < AHi then
-    QuickSort(Lo, AHi) ;
-end;
- 
+  ptrLeft := Left;
+  ptrRight := Right;
+  Pivot := a[(Left + Right) / 2];
 
+  repeat
+    while (ptrLeft < Right) and (a[ptrLeft] < Pivot) do
+      // while a[ptrLeft] < Pivot do
+      ptrLeft := ptrLeft + 1;
+    while (ptrRight > Left) and (a[ptrRight] > Pivot) do
+      // while a[ptrRight] > Pivot do
+      ptrRight := ptrRight - 1;
+    if ptrLeft <= ptrRight then
+      begin
+        if ptrLeft < ptrRight then
+          begin
+            Temp := a[ptrLeft];
+            a[ptrLeft] := a[ptrRight];
+            a[ptrRight] := Temp;
+          end;
+        ptrLeft := ptrLeft + 1;
+        ptrRight := ptrRight - 1;
+      end;
+  until ptrLeft > ptrRight;
+
+  if ptrRight > Left then
+    Quicksort(Left, ptrRight);
+  if ptrLeft < Right then
+    Quicksort(ptrLeft, Right);
+end;
 
 begin
   a[1] := 6;
@@ -46,9 +51,8 @@ begin
   a[8] := 9;
   a[9] := 0;
   a[0] := 8;
-  QuickSort(0, 9);
- 
-  for I := 0 to 9 do
+  Quicksort(0, 9);
+
+  for i := 0 to 9 do
     writeln(a[i]);
 end.
-

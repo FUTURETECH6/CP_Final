@@ -6,7 +6,7 @@ std::string getOpNameByID(int id) {
         case OP_MINUS: return "-";
         case OP_MULTI: return "*";
         case OP_RDIV: return "/";
-        case OP_DDIV: return "//";
+        case OP_DDIV: return "/";
         case OP_MOD: return "%";
         case OP_AND: return "&&";
         case OP_OR: return "||";

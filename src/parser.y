@@ -319,8 +319,8 @@ EXP_PASCL_exprF:                 EXP_PASCL_exprF TOKEN_PLUS EXP_PASCL_TERMF     
                     | EXP_PASCL_TERMF                              {$$ = $1;}
                     ;
 
-EXP_PASCL_TERMF:                 EXP_PASCL_TERMF TOKEN_MUL EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_MULTI, $1, $3);}
-                    | EXP_PASCL_TERMF TOKEN_DIV EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_RDIV, $1, $3);}
+EXP_PASCL_TERMF:      EXP_PASCL_TERMF TOKEN_MUL EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_MULTI, $1, $3);}
+                    | EXP_PASCL_TERMF TOKEN_DIV EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_DDIV, $1, $3);}
                     | EXP_PASCL_TERMF TOKEN_MOD EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_MOD, $1, $3);}
                     | EXP_PASCL_TERMF TOKEN_AND EXP_PASCL_FAT_E                 {$$ = new BinaryExp(OP_AND, $1, $3);}
                     | EXP_PASCL_FAT_E                            {$$ = $1;}
