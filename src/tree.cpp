@@ -203,14 +203,14 @@ tree::Type *tree::findType(const std::string &typeName, Base *node) {
         default: return nullptr;
     }
 }
-tree::Type *tree::copyType(Type *origin) {
+tree::Type *tree::copyType(Type *src) {
     auto *copy       = new Type();
-    copy->name       = origin->name;
-    copy->baseType   = origin->baseType;
-    copy->indexStart = origin->indexStart;
-    copy->indexEnd   = origin->indexEnd;
+    copy->name       = src->name;
+    copy->baseType   = src->baseType;
+    copy->indexStart = src->indexStart;
+    copy->indexEnd   = src->indexEnd;
     copy->childType.clear();
-    for (Type *iter : origin->childType)
+    for (Type *iter : src->childType)
         copy->childType.push_back(copyType(iter));
     return copy;
 }

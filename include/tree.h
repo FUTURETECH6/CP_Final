@@ -392,7 +392,7 @@ namespace tree {
     };
 
     void visualizeTree(std::string filename, Base *root);
-    Type *copyType(Type *origin);
+    Type *copyType(Type *src);
     bool isSameType(Type *type1, Type *type2);
     Base *findName(const std::string &name, Base *node);
     bool canFindLabel(const int &label, Base *node);
@@ -401,5 +401,5 @@ namespace tree {
     Type *findVar(const std::string &typeName, Base *node);
     FuncDef *findFunction(const std::string &typeName, Base *node);
 
-}  // namespace tree
+}  
 #endif
