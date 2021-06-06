@@ -10,8 +10,8 @@ class CodeGenContext;
 namespace tree {
     /* Base */
     class Base;
-    class Stm;  /* objects that don't return values */
-    class Exp;  /* objects that return values */
+    class Stm; /* objects that don't return values */
+    class Exp; /* objects that return values */
 
     /* Stm */
     class AssignStm;
@@ -23,15 +23,13 @@ namespace tree {
     class RepeatStm;
     class CallStm;
     class CaseStm;
-    
-    
+
     /* Exp */
     class UnaryExp;
     class BinaryExp;
     class ConstantExp;
     class VariableExp;
     class CallExp;
-    
 
     /* Block */
     class Program;
@@ -46,10 +44,10 @@ namespace tree {
     class LabelDef;
     class ConstDef;
     class FuncDef;
-    
+
     /* Type */
     class Type;
-    
+
     /* Value */
     class Value;
 
@@ -65,12 +63,11 @@ namespace tree {
 
     class Type : public Base {
       public:
-        std::string name;  /* Name used to search the value */
-        int baseType;   
-        int indexStart = 0,
-            indexEnd   = 0; /* Array index */
-        std::vector<Type *> childType;  /* Type of children */
-                                       
+        std::string name; /* Name used to search the value */
+        int baseType;
+        int indexStart = 0, indexEnd = 0; /* Array index */
+        std::vector<Type *> childType;    /* Type of children */
+
         Type() : Base(ND_TYPE) {}
         Type(int _baseType) : Base(ND_TYPE), baseType(_baseType) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -104,12 +101,12 @@ namespace tree {
 
     class Define : public Base {
       public:
-         /* The followings can be null */
-        std::vector<LabelDef *> labelDef;  
-        std::vector<ConstDef *> constDef;  
-        std::vector<TypeDef *> typeDef;   
-        std::vector<VarDef *> varDef;      
-        std::vector<FuncDef *> funcDef;    
+        /* The followings can be null */
+        std::vector<LabelDef *> labelDef;
+        std::vector<ConstDef *> constDef;
+        std::vector<TypeDef *> typeDef;
+        std::vector<VarDef *> varDef;
+        std::vector<FuncDef *> funcDef;
         Define(std::vector<LabelDef *> _labelDef, std::vector<ConstDef *> _constDef, std::vector<TypeDef *> _typeDef,
             std::vector<VarDef *> _varDef, std::vector<FuncDef *> _funcDef)
             : Base(ND_DEFINE) {
@@ -178,7 +175,7 @@ namespace tree {
     class ConstDef : public Base {
       public:
         std::string name;
-        Exp *value = nullptr;  /* Err if value is null */
+        Exp *value = nullptr; /* Err if value is null */
         ConstDef(const std::string &_name, Exp *_value) : Base(ND_CONST_DEF), name(_name), value(_value) {
             _value->father = this;
         }
@@ -189,7 +186,7 @@ namespace tree {
     class TypeDef : public Base {
       public:
         std::string name;
-        Type *type = nullptr;  /* Err if type is null */
+        Type *type = nullptr; /* Err if type is null */
         TypeDef(const std::string &_name, Type *_type) : Base(ND_TYPE_DEF), name(_name), type(_type) {
             _type->father = this;
         }
@@ -200,7 +197,7 @@ namespace tree {
     class VarDef : public Base {
       public:
         std::string name;
-        Type *type    = nullptr;  /* Err if type is null */
+        Type *type    = nullptr; /* Err if type is null */
         bool isGlobal = false;
         VarDef(const std::string &_name, Type *_type) : Base(ND_VAR_DEF), name(_name), type(_type) {}
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
@@ -212,8 +209,8 @@ namespace tree {
         std::string name;
         std::vector<Type *> argTypeVec;
         std::vector<std::string> argNameVec;
-        std::vector<bool> argFormalVec;  /* Pass self for formal parameters, otherwise pass ptr */
-        Type *retType  = nullptr;        /* Return null for procedures*/
+        std::vector<bool> argFormalVec; /* Pass self for formal parameters, otherwise pass ptr */
+        Type *retType  = nullptr;       /* Return null for procedures*/
         Define *define = nullptr;
         Body *body     = nullptr;
         FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
@@ -265,8 +262,8 @@ namespace tree {
     class IfStm : public Stm {
       public:
         Exp *condition  = nullptr;
-        Body *trueBody  = nullptr;  /* Err if trueBody is null */
-        Body *falseBody = nullptr;  /* Falsebody can be null */
+        Body *trueBody  = nullptr; /* Err if trueBody is null */
+        Body *falseBody = nullptr; /* Falsebody can be null */
         IfStm() : Stm(ND_IF_STM) {}
         void setCondition(Exp *);
         void addTrue(Body *);
@@ -289,7 +286,7 @@ namespace tree {
       public:
         std::string iter;
         Exp *start = nullptr, *end = nullptr;
-        int step;  /* Possible value : 1 / -1 */
+        int step; /* Possible value : 1 / -1 */
         Body *loop = nullptr;
         ForStm(const std::string &_iter, Exp *_start, Exp *_end, int _step)
             : Stm(ND_FOR_STM), iter(_iter), start(_start), end(_end), step(_step) {
@@ -380,14 +377,14 @@ namespace tree {
 
     class Value {
       public:
-        int baseType;  /* Possible value : int(0), real(1), char(2), bool(3), string(4), array(5), record(6) */
+        int baseType; /* Possible value : int(0), real(1), char(2), bool(3), string(4), array(5), record(6) */
         union returnVal {
             int intVal;
             float realVal;
             char charVal;
             bool boolVal;
             std::string *stringVal;
-            std::vector<Value *> *childValVec;  /* Values of children */
+            std::vector<Value *> *childValVec; /* Values of children */
         } val;
         llvm::Value *codeGen(CodeGenContext *context);
     };
@@ -402,5 +399,5 @@ namespace tree {
     Type *findVar(const std::string &typeName, Base *node);
     FuncDef *findFunction(const std::string &typeName, Base *node);
 
-}  
+}  // namespace tree
 #endif

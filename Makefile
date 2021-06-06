@@ -19,10 +19,10 @@ CXX = $(LLVM_CLANG)
 
 # Flags
 INCLUDE = -Iinclude -Ibuild
-LLVM_LIBS = $(shell $(LLVM_CONFIG) --ldflags --libs)
+LIBS = $(shell $(LLVM_CONFIG) --ldflags --libfiles) -lstdc++ -ll
 
 CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags) -std=c++11 ${INCLUDE} -O0 -g
-LDFLAGS = ${CCFLAGS} ${LLVM_LIBS} -ll -lstdc++
+LDFLAGS = ${CCFLAGS} ${LIBS} 
 
 all: dirs progs
 
@@ -70,8 +70,9 @@ scan:
 
 tgt_dir=tgt/$$i/
 test: all
-	for i in $(notdir $(patsubst %.pas, %, $(wildcard test/*.pas))) ; do \
-		echo $$i ; \
+	@echo "\e[32m> Start testing.\e[0m\n"
+	@for i in $(notdir $(patsubst %.pas, %, $(wildcard test/*.pas))) ; do \
+		echo "\e[34mTesting $$i...\e[0m" ; \
 		mkdir -p ${tgt_dir} ; \
 		./$(TARGET) test/$$i.pas > "${tgt_dir}/$$i(debug output).txt" ; \
 		mv a.bc ${tgt_dir}/$$i.bc ; \
