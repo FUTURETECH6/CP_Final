@@ -188,8 +188,7 @@ bool Define::SEMANT_CHECK_LEGAL() {
                 break;
         }
     if (!isLegal) {
-        yyerror(this, "Semantics Error: There are at least two obeject in define part, which "
-                      "has the same name.");
+        yyerror(this, "[SemanticsError]: There are more than one object sharing same name in def.");
     }
     return isLegal;
 }
@@ -290,10 +289,8 @@ bool FuncDef::SEMANT_CHECK_LEGAL() {
         isLegal = body->SEMANT_CHECK_LEGAL();
     else {
         char info[200];
-        sprintf(info,
-            "Semantics Error: There are at least two obeject in function %s, which has the "
-            "same name.",
-            name.c_str());
+        sprintf(
+            info, "[SemanticsError]: There are more than one object sharing same name in function `%s`.", name.c_str());
         yyerror(this, info);
     }
     return isLegal;
@@ -308,15 +305,13 @@ bool StatementAssign::SEMANT_CHECK_LEGAL() {
         if (leftVal->returnVal != nullptr) {
             isLegal = false;
             char info[200];
-            sprintf(info, "Semantics Error: Constant obeject cannot be the left value in an "
-                          "assignment statement.");
+            sprintf(info, "[SemanticsError]: Const can't be left value");
             yyerror(this, info);
         } else
             ;
     else {
         char info[200];
-        sprintf(info, "Semantics Error: Left value and right value must be the same type in "
-                      "an assignment statement.");
+        sprintf(info, "[SemanticsError]: Left and right value have different type.");
         yyerror(this, info);
     }
     return isLegal;
@@ -332,25 +327,20 @@ bool CallStm::SEMANT_CHECK_LEGAL() {
         if (function == nullptr) {
             isLegal = false;
             char info[200];
-            sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
+            sprintf(info, "[SemanticsError]: Cannot find function %s.", name.c_str());
             yyerror(this, info);
         } else if (args.size() != function->TypeofVectorPara.size()) {
             isLegal = false;
             char info[200];
-            sprintf(info,
-                "Semantics Error: The number of arguments are different between call and "
-                "definition of function %s.",
-                name.c_str());
+            sprintf(info, "[SemanticsError]: Wrong arguments number for function %s.", name.c_str());
             yyerror(this, info);
         } else {
             for (int i = 0; i < args.size(); i++)
                 if (!isSameType(args[i]->returnType, function->TypeofVectorPara[i])) {
                     isLegal = false;
                     char info[200];
-                    sprintf(info,
-                        "Semantics Error: No.%d argument has the differenct type between "
-                        "call and definition of function %s.",
-                        i, name.c_str());
+                    sprintf(info, "[SemanticsError]: Wrong arguments type of function %s's %dth argument.",
+                        name.c_str(), i);
                     yyerror(this, info);
                     break;
                 }
@@ -360,24 +350,21 @@ bool CallStm::SEMANT_CHECK_LEGAL() {
 }
 
 bool CaseStm::SEMANT_CHECK_LEGAL() {
-    // 全常量检测
     for (auto situation : situations)
         for (auto match_item : situation->caseVec)
             if (match_item->returnVal == nullptr) {
                 char info[200];
-                sprintf(info, "Semantics Error: The match items in case statement must be constant.");
+                sprintf(info, "[SemanticsError]: Invalid match type in case, const is required.");
                 yyerror(this, info);
                 isLegal = false;
                 return isLegal;
             }
-    // 类型匹配
     bool is_int = isTypeInt(object->returnType);
     for (auto situation : situations)
         for (auto match_item : situation->caseVec)
             if (is_int != isTypeInt(match_item->returnType)) {
                 char info[200];
-                sprintf(info, "Semantics Error: The match items in case statement must have "
-                              "the same type as the switch object.");
+                sprintf(info, "[SemanticsError]: Object of switch and case have different type.");
                 yyerror(this, info);
                 isLegal = false;
                 return isLegal;
@@ -391,7 +378,7 @@ bool CaseStm::SEMANT_CHECK_LEGAL() {
             int id = is_int ? (match_item->returnVal->val.intVal + 32768) : ((int)match_item->returnVal->val.charVal);
             if (flag[id]) {
                 char info[200];
-                sprintf(info, "Semantics Error: The match items in case statement must be different.");
+                sprintf(info, "[SemanticsError]: Same value is not allowd in cases.");
                 yyerror(this, info);
                 isLegal = false;
                 return isLegal;
@@ -407,7 +394,7 @@ bool ForStm::SEMANT_CHECK_LEGAL() {
     if (!((isTypeInt(start->returnType) && isTypeInt(end->returnType)) ||
             (isTypeChar(start->returnType) && isTypeChar(end->returnType)))) {
         char info[200];
-        sprintf(info, "Semantics Error: The start index or the end index is illegal.");
+        sprintf(info, "[SemanticsError]: The start index or the end index is illegal.");
         yyerror(this, info);
         isLegal = false;
     }
@@ -419,7 +406,7 @@ bool GotoStm::SEMANT_CHECK_LEGAL() {
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
-        sprintf(info, "Semantics Error: Cannot find label %d.", label);
+        sprintf(info, "[SemanticsError]: Cannot find label %d.", label);
         yyerror(this, info);
     }
     return isLegal;
@@ -434,7 +421,7 @@ bool IfStm::SEMANT_CHECK_LEGAL() {
         isLegal &= true;
     else {
         char info[200];
-        sprintf(info, "Semantics Error: The type for the condition must be boolean.");
+        sprintf(info, "[SemanticsError]: Ccondition's type isn't boolean.");
         yyerror(this, info);
         isLegal = false;
     }
@@ -445,7 +432,7 @@ bool LabelStm::SEMANT_CHECK_LEGAL() {
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
-        sprintf(info, "Semantics Error: Cannot find label %d.", label);
+        sprintf(info, "[SemanticsError]: Cannot find label %d.", label);
         yyerror(this, info);
     }
     return isLegal;
@@ -458,7 +445,7 @@ bool StatementRepeat::SEMANT_CHECK_LEGAL() {
         isLegal &= true;
     else {
         char info[200];
-        sprintf(info, "Semantics Error: The type for the condition must be boolean.");
+        sprintf(info, "[SemanticsError]: Ccondition's type isn't boolean.");
         yyerror(this, info);
         isLegal = false;
     }
@@ -472,7 +459,7 @@ bool WhileStm::SEMANT_CHECK_LEGAL() {
         isLegal &= true;
     else {
         char info[200];
-        sprintf(info, "Semantics Error: The type for the condition must be boolean.");
+        sprintf(info, "[SemanticsError]: Ccondition's type isn't boolean.");
         yyerror(this, info);
         isLegal = false;
     }
@@ -487,8 +474,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_OPPO: {
                 if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of an operand with an unary "
-                                  "operator \'-\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'-\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -498,8 +484,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_NOT: {
                 if (!isTypeChar(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of an operand with an unary "
-                                  "operator \'not\' must be boolean.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'not\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -509,8 +494,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_ABS: {
                 if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'abs\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'abs\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -520,8 +504,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_PRED: {
                 if (!isTypeChar(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'pred\' must be char.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'pred\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -531,8 +514,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_SUCC: {
                 if (!isTypeChar(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'succ\' must be char.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'succ\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -542,8 +524,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_ODD: {
                 if (!isTypeInt(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'odd\' must be integer.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'odd\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -553,8 +534,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_CHR: {
                 if (!isTypeInt(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'chr\' must be integer.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'chr\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -564,8 +544,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_ORD: {
                 if (!isTypeChar(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'ord\' must be char.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'ord\' must be char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -575,8 +554,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_SQR: {
                 if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'sqr\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'sqr\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -586,8 +564,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             case OP_SQRT: {
                 if (!isTypeInt(operand->returnType) && !isTypeReal(operand->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the parameter in function "
-                                  "\'sqrt\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Argument type in function \'sqrt\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -596,8 +573,7 @@ bool UnaryExp::SEMANT_CHECK_LEGAL() {
             } break;
             default: {
                 char info[200];
-                sprintf(info, "Semantics Error: There is something wrong. This operator type "
-                              "is unrecognised.");
+                sprintf(info, "[SemanticsError]: Invalid Op");
                 yyerror(this, info);
                 isLegal = false;
             } break;
@@ -616,8 +592,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'+\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'+\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -634,8 +609,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'-\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'-\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -652,8 +626,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'*\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'*\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -670,8 +643,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'/\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'/\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -685,8 +657,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'div\' must be integer or real.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'div\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -699,8 +670,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     return isLegal;
                 if (!isTypeInt(OPRFIRST->returnType) || !isTypeInt(OPRSECOND->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'%%\' must be integer.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'%%\' must be integer.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -713,8 +683,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     return isLegal;
                 if (!isTypeBoolean(OPRFIRST->returnType) || !isTypeBoolean(OPRSECOND->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'and\' must be boolean.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'and\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -727,8 +696,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     return isLegal;
                 if (!isTypeChar(OPRFIRST->returnType) || !isTypeChar(OPRSECOND->returnType)) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'or\' must be boolean.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'or\' must be boolean.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -744,8 +712,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'<\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'<\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -761,8 +728,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'>\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'>\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -778,8 +744,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'<=\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'<=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -795,8 +760,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'>=\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'>=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -812,8 +776,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'=\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'=\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -829,8 +792,7 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                     (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
                         !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of operands with a binary "
-                                  "operator \'<>\' must be integer, real or char.");
+                    sprintf(info, "[SemanticsError]: Operand type with \'<>\' must be integer, real or char.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
@@ -843,15 +805,15 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                         returnType = copyType(findChildType(OPRFIRST->returnType, ((VariableExp *)OPRSECOND)->name));
                     else {
                         char info[200];
-                        sprintf(info, "Semantics Error: Cannot find child named %s in this record.",
+                        sprintf(info, "[SemanticsError]: Cannot find child named %s in this record.",
                             (((VariableExp *)OPRSECOND)->name).c_str());
                         yyerror(this, info);
                         isLegal = false;
                     }
                 else {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the first operand in the "
-                                  "binary operator \'.\' must be record.");
+                    sprintf(info,
+                        "[SemanticsError]: The type of the first operand in the binary operator \'.\' must be record.");
                     yyerror(this, info);
                     isLegal = false;
                 }
@@ -865,22 +827,21 @@ bool BinaryExp::SEMANT_CHECK_LEGAL() {
                         returnType = copyType(OPRFIRST->returnType->childType[0]);
                     } else {
                         char info[200];
-                        sprintf(info, "Semantics Error: The index must be integer or char.");
+                        sprintf(info, "[SemanticsError]: The index must be integer or char.");
                         yyerror(this, info);
                         isLegal = false;
                     }
                 } else {
                     char info[200];
-                    sprintf(info, "Semantics Error: The type of the first operand in the "
-                                  "binary operator \'[]\' must be array or string.");
+                    sprintf(info, "[SemanticsError]: The type of the first operand in the binary operator \'[]\' must "
+                                  "be array or string.");
                     yyerror(this, info);
                     isLegal = false;
                 }
             } break;
             default: {
                 char info[200];
-                sprintf(info, "Semantics Error: There is something wrong. This operator type "
-                              "is unrecognised.");
+                sprintf(info, "[SemanticsError]: Invalid Op");
                 yyerror(this, info);
                 isLegal = false;
             }
@@ -895,25 +856,20 @@ bool CallExp::SEMANT_CHECK_LEGAL() {
     if (function == nullptr) {
         isLegal = false;
         char info[200];
-        sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
+        sprintf(info, "[SemanticsError]: Function %s undefined.", name.c_str());
         yyerror(this, info);
     } else if (args.size() != function->TypeofVectorPara.size()) {
         isLegal = false;
         char info[200];
-        sprintf(info,
-            "Semantics Error: The number of arguments are different between call and "
-            "definition of function %s.",
-            name.c_str());
+        sprintf(info, "[SemanticsError]: Wrong arguments number for function %s.", name.c_str());
         yyerror(this, info);
     } else {
         for (int i = 0; i < args.size(); i++)
             if (!isSameType(args[i]->returnType, function->TypeofVectorPara[i])) {
                 isLegal = false;
                 char info[200];
-                sprintf(info,
-                    "Semantics Error: No.%d argument has different type between call and "
-                    "definition of function %s.",
-                    i, name.c_str());
+                sprintf(
+                    info, "[SemanticsError]: Wrong arguments type of function %s's %dth argument.", name.c_str(), i);
                 yyerror(this, info);
                 break;
             }
