@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-class CodeGenContext;
+class ContextOfCodeCreate;
 
 namespace tree {
     /* Base */
@@ -13,38 +13,40 @@ namespace tree {
     class Stm; /* objects that don't return values */
     class Exp; /* objects that return values */
 
-    /* Stm */
-    class AssignStm;
-    class IfStm;
-    class ForStm;
-    class WhileStm;
-    class GotoStm;
-    class LabelStm;
-    class RepeatStm;
-    class CallStm;
-    class CaseStm;
-
-    /* Exp */
-    class UnaryExp;
-    class BinaryExp;
-    class ConstantExp;
-    class VariableExp;
-    class CallExp;
+    /* Clause */
+    class StatementAssign;  /* assignment clause */
+    class IfStm;  /* select clause */
+    class ForStm; /* for clause */
+    class WhileStm; /* while clause */
+    class GotoStm;  /* goto clause */
+    class LabelStm; /* label clause */
+    class StatementRepeat;  /* repeat clause */
+    class CallStm;  /* call function */
+    class CaseStm;  /* case clause */
+    
+    
+    /* Expression */
+    class UnaryExp; /* Unary operator expression */ 
+    class BinaryExp; /* binary operator expression */
+    class EXPRESSIONConst;  /* constant expression */
+    class VariableExp;  /* id expression */
+    class CallExp;  /* function call expression */
+    
 
     /* Block */
-    class Program;
-    class Routine;
-    class Define;
-    class Body;
-    class Situation;
+    class Program;  /* root of code */
+    class Routine;  
+    class Define;   /* root of definitions */
+    class Body; /* root of sentence block */
+    class Situation;  /* root of case clause */
 
     /* Define */
-    class TypeDef;
-    class VarDef;
-    class LabelDef;
-    class ConstDef;
-    class FuncDef;
-
+    class TypeDef;  /* define a single type */
+    class VarDef; /* define a variable */
+    class LabelDef; /* define a label */
+    class ConstDef; /* define a constant */
+    class FuncDef;  /* define a function */
+    
     /* Type */
     class Type;
 
@@ -57,8 +59,8 @@ namespace tree {
         Base *father = nullptr;
         bool isLegal = true;
         Base(int type = 0) : nodeType(type) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
-        virtual bool checkSemantics()                         = 0;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) = 0;
+        virtual bool SEMANT_CHECK_LEGAL()                         = 0;
     };
 
     class Type : public Base {
@@ -70,8 +72,8 @@ namespace tree {
 
         Type() : Base(ND_TYPE) {}
         Type(int _baseType) : Base(ND_TYPE), baseType(_baseType) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override { return false; }
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override { return false; }
     };
 
     class Routine : public Base {
@@ -79,8 +81,8 @@ namespace tree {
         Define *define = nullptr;
         Body *body     = nullptr;
         Routine(Define *_define, Body *_body) : Base(ND_PROGRAM), define(_define), body(_body) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override { return nullptr; }
-        bool checkSemantics() override { return false; }
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override { return nullptr; }
+        bool SEMANT_CHECK_LEGAL() override { return false; }
     };
 
     class Program : public Base {
@@ -90,13 +92,13 @@ namespace tree {
         Body *body     = nullptr;
         Program(const std::string &_name) : Base(ND_PROGRAM), name(_name) {}
         void PASCAL_ADD_TURN(Routine *_routine) {
-            this->setDefination(_routine->define);
+            this->DefSetup(_routine->define);
             this->setBody(_routine->body);
         }
-        void setDefination(Define *);
+        void DefSetup(Define *);
         void setBody(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class Define : public Base {
@@ -113,7 +115,7 @@ namespace tree {
             for (auto ldef : _labelDef)
                 addLabel(ldef);
             for (auto cdef : _constDef)
-                addConst(cdef);
+                CONSTPLUS(cdef);
             for (auto tdef : _typeDef)
                 addType(tdef);
             for (auto vdef : _varDef)
@@ -122,21 +124,21 @@ namespace tree {
                 addFunction(fdef);
         }
         void addLabel(LabelDef *);
-        void addConst(ConstDef *);
+        void CONSTPLUS(ConstDef *);
         void addType(TypeDef *);
         void addVar(VarDef *);
         void addFunction(FuncDef *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class Body : public Base {
       public:
         std::vector<Stm *> stms;
         Body() : Base(ND_BODY) {}
-        void addStm(Stm *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void StatementAdd(Stm *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class Situation : public Base {
@@ -145,15 +147,15 @@ namespace tree {
         Body *solution = nullptr;
         Situation() : Base(ND_SITUATION) {}
         void addCase(Exp *);
-        void addSolution(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void SolutionAdd(Body *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class Stm : public Base {
       public:
         Stm(int type = 0) : Base(type) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) = 0;
     };
 
     class Exp : public Base {
@@ -161,15 +163,15 @@ namespace tree {
         Value *returnVal = nullptr;
         Type *returnType = nullptr;
         Exp(int type = 0) : Base(type) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) = 0;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) = 0;
     };
 
     class LabelDef : public Base {
       public:
         int labelIndex;
         LabelDef(int _labelIndex) : Base(ND_LABEL_DEF) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class ConstDef : public Base {
@@ -179,8 +181,8 @@ namespace tree {
         ConstDef(const std::string &_name, Exp *_value) : Base(ND_CONST_DEF), name(_name), value(_value) {
             _value->father = this;
         }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class TypeDef : public Base {
@@ -190,8 +192,8 @@ namespace tree {
         TypeDef(const std::string &_name, Type *_type) : Base(ND_TYPE_DEF), name(_name), type(_type) {
             _type->father = this;
         }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class VarDef : public Base {
@@ -200,45 +202,45 @@ namespace tree {
         Type *type    = nullptr; /* Err if type is null */
         bool isGlobal = false;
         VarDef(const std::string &_name, Type *_type) : Base(ND_VAR_DEF), name(_name), type(_type) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class FuncDef : public Base {
       public:
         std::string name;
-        std::vector<Type *> argTypeVec;
-        std::vector<std::string> argNameVec;
-        std::vector<bool> argFormalVec; /* Pass self for formal parameters, otherwise pass ptr */
+        std::vector<Type *> TypeofVectorPara;
+        std::vector<std::string> VectorNamePara;
+        std::vector<bool> FomalVectorPara; /* Pass self for formal parameters, otherwise pass ptr */
         Type *retType  = nullptr;       /* Return null for procedures*/
         Define *define = nullptr;
         Body *body     = nullptr;
         FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
-        void addArgvs(const std::string &, Type *, bool);
+        void PARAMAdd(const std::string &, Type *, bool);
         void setReturnType(Type *);
-        void setDefination(Define *);
+        void DefSetup(Define *);
         void setBody(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class ArgDef : public Base {
       public:
         Type *type;
         ArgDef(Type *_type) : Base(ND_ARG_DEF), type(_type) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override { return nullptr; }
-        bool checkSemantics() override { return false; }
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override { return nullptr; }
+        bool SEMANT_CHECK_LEGAL() override { return false; }
     };
 
-    class AssignStm : public Stm {
+    class StatementAssign : public Stm {
       public:
         Exp *leftVal;
         Exp *rightVal;
-        AssignStm(Exp *left, Exp *right) : Stm(ND_ASSIGN_STM), leftVal(left), rightVal(right) {
+        StatementAssign(Exp *left, Exp *right) : Stm(ND_ASSIGN_STM), leftVal(left), rightVal(right) {
             left->father = right->father = this;
         }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class CallStm : public Stm {
@@ -246,17 +248,17 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallStm(const std::string &_name) : Stm(ND_CALL_STM), name(_name) {}
-        void addArgvs(Exp *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void PARAMAdd(Exp *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class LabelStm : public Stm {
       public:
         int label;
         LabelStm(const int &_label) : Stm(ND_LABEL_STM), label(_label) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class IfStm : public Stm {
@@ -265,11 +267,11 @@ namespace tree {
         Body *trueBody  = nullptr; /* Err if trueBody is null */
         Body *falseBody = nullptr; /* Falsebody can be null */
         IfStm() : Stm(ND_IF_STM) {}
-        void setCondition(Exp *);
-        void addTrue(Body *);
-        void addFalse(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void ConditionSetup(Exp *);
+        void TrueAdd(Body *);
+        void FalseAdd(Body *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class CaseStm : public Stm {
@@ -277,9 +279,9 @@ namespace tree {
         Exp *object;
         std::vector<Situation *> situations;
         CaseStm(Exp *_object) : Stm(ND_CASE_STM), object(_object) {}
-        void addSituation(Situation *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void SituaAdd(Situation *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class ForStm : public Stm {
@@ -292,9 +294,9 @@ namespace tree {
             : Stm(ND_FOR_STM), iter(_iter), start(_start), end(_end), step(_step) {
             _start->father = _end->father = this;
         }
-        void addLoop(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void LoopAdd(Body *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class WhileStm : public Stm {
@@ -302,28 +304,28 @@ namespace tree {
         Exp *condition = nullptr;
         Body *loop     = nullptr;
         WhileStm(Exp *_condition) : Stm(ND_WHILE_STM), condition(_condition) { _condition->father = this; }
-        void addLoop(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void LoopAdd(Body *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
-    class RepeatStm : public Stm {
+    class StatementRepeat : public Stm {
       public:
         Exp *condition = nullptr;
         Body *loop     = nullptr;
-        RepeatStm() : Stm(ND_REPEAT_STM) {}
-        void setCondition(Exp *);
-        void addLoop(Body *);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        StatementRepeat() : Stm(ND_REPEAT_STM) {}
+        void ConditionSetup(Exp *);
+        void LoopAdd(Body *);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class GotoStm : public Stm {
       public:
         int label;
         GotoStm(int _label) : Stm(ND_GOTO_STM), label(_label) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class UnaryExp : public Exp {
@@ -333,8 +335,8 @@ namespace tree {
         UnaryExp(int _opcode, Exp *_operand) : Exp(ND_UNARY_EXP), opcode(_opcode), operand(_operand) {
             _operand->father = this;
         }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class BinaryExp : public Exp {
@@ -345,8 +347,8 @@ namespace tree {
             : Exp(ND_BINARY_EXP), opcode(_opcode), OPRFIRST(_OPRFIRST), OPRSECOND(_OPRSECOND) {
             _OPRFIRST->father = OPRSECOND->father = this;
         }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class CallExp : public Exp {
@@ -354,25 +356,25 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallExp(const std::string &_name) : Exp(ND_CALL_EXP), name(_name) {}
-        void addArgvs(Exp *args);
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        void PARAMAdd(Exp *args);
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
-    class ConstantExp : public Exp {
+    class EXPRESSIONConst : public Exp {
       public:
         Value *value;
-        ConstantExp(Value *_value) : Exp(NX_CONST_EXP), value(_value) { returnVal = _value; }
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        EXPRESSIONConst(Value *_value) : Exp(NX_CONST_EXP), value(_value) { returnVal = _value; }
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class VariableExp : public Exp {
       public:
         std::string name;
         VariableExp(const std::string &_name) : Exp(ND_VARIABLE_EXP), name(_name) {}
-        virtual llvm::Value *codeGen(CodeGenContext *context) override;
-        bool checkSemantics() override;
+        virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
+        bool SEMANT_CHECK_LEGAL() override;
     };
 
     class Value {
@@ -386,11 +388,11 @@ namespace tree {
             std::string *stringVal;
             std::vector<Value *> *childValVec; /* Values of children */
         } val;
-        llvm::Value *codeGen(CodeGenContext *context);
+        llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context);
     };
 
     void visualizeTree(std::string filename, Base *root);
-    Type *copyType(Type *origin);
+    Type *copyType(Type *src);
     bool isSameType(Type *type1, Type *type2);
     Base *findName(const std::string &name, Base *node);
     bool canFindLabel(const int &label, Base *node);
@@ -399,5 +401,5 @@ namespace tree {
     Type *findVar(const std::string &typeName, Base *node);
     FuncDef *findFunction(const std::string &typeName, Base *node);
 
-}  // namespace tree
+}  
 #endif

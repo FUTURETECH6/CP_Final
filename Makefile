@@ -22,7 +22,10 @@ INCLUDE = -Iinclude -Ibuild
 LIBS = $(shell $(LLVM_CONFIG) --ldflags --libfiles) -lstdc++ -ll
 
 CCFLAGS = $(shell $(LLVM_CONFIG) --cppflags) -std=c++11 ${INCLUDE} -Ofast
-LDFLAGS = ${CCFLAGS} ${LIBS} 
+LDFLAGS = ${CCFLAGS} ${LIBS}
+
+# Test result
+TGT_DIR=test_result
 
 all: dirs progs
 
@@ -30,7 +33,7 @@ progs: ${TARGET}
 ${TARGET}: build/parser.o build/lexer.o build/tree.o build/treeprint.o build/symbol.o build/semantics.o build/codegen.o build/main.o
 	$(CXX) $^ ${LDFLAGS} -o $@
 
-build/parser.o: build/parser.cpp
+build/parser.o: build/parser.cpp include/tree.h include/symbol.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 build/lexer.o: build/lexer.cpp build/parser.cpp
 	$(CXX) -o $@ -c $< ${CCFLAGS}
@@ -63,31 +66,30 @@ clean_tmp:
 clean_test:
 	@rm -f a.bc* a.tree
 	@rm -f test/*.bc test/*.ll test/*.lli test/*.s test/*.tree test/*.txt
-	@rm -rf tgt
+	@rm -rf ${TGT_DIR}
 
 scan:
 	intercept-build make && analyze-build
 
-tgt_dir=test_result/$$i/
 test: all
 	@echo "\e[32m> Start testing.\e[0m\n"
 	@for i in $(notdir $(patsubst %.pas, %, $(wildcard test/*.pas))) ; do \
 		echo "\e[34mTesting $$i...\e[0m" ; \
-		mkdir -p ${tgt_dir} ; \
-		./$(TARGET) test/$$i.pas > "${tgt_dir}/$$i(debug output).txt" ; \
-		mv a.bc ${tgt_dir}/$$i.bc ; \
-		mv a.tree ${tgt_dir}/$$i.tree ; \
-		$(LLVM_LLI) ${tgt_dir}/$$i.bc > "${tgt_dir}/$$i(lli output).txt" ;  \
-		$(LLVM_DIS) -o ${tgt_dir}/$$i.ll ${tgt_dir}/$$i.bc ;  \
-		$(LLVM_LLC) -o ${tgt_dir}/$$i.s ${tgt_dir}/$$i.ll -march=x86-64 ; \
+		mkdir -p ${TGT_DIR}/$$i ; \
+		./$(TARGET) test/$$i.pas > "${TGT_DIR}/$$i/$$i(debug output).txt" ; \
+		mv a.bc ${TGT_DIR}/$$i/$$i.bc ; \
+		mv a.tree ${TGT_DIR}/$$i/$$i.tree ; \
+		$(LLVM_LLI) ${TGT_DIR}/$$i/$$i.bc > "${TGT_DIR}/$$i/$$i(lli output).txt" ;  \
+		$(LLVM_DIS) -o ${TGT_DIR}/$$i/$$i.ll ${TGT_DIR}/$$i/$$i.bc ;  \
+		$(LLVM_LLC) -o ${TGT_DIR}/$$i/$$i.s ${TGT_DIR}/$$i/$$i.ll -march=x86-64 ; \
 	done
 
 fmt:
 	$(LLVM_FMT) -i --style=file src/**.cpp include/*.h
 	ls test/*.pas | xargs -i ptop -i 2 -c ptop.cfg {} {}
 
-print_output: fmt clean test
-	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'
+print_output: test
+	ls ${TGT_DIR} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${TGT_DIR}/{}/{}(lli output).txt"'
 
 zip: fmt test
-	zip -r ${TARGET}_G19.zip include src test ${tgt_dir} .clang-format ptop.cfg Makefile README.md ${TARGET}
+	zip -r ${TARGET}_G19.zip include src test ${TGT_DIR} .clang-format ptop.cfg Makefile README.md ${TARGET}
