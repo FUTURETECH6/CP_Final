@@ -1,4 +1,4 @@
-.PHONY: all clean scan test fmt progs dirs clean_tmp clean_test print_output
+.PHONY: all clean scan test fmt progs dirs clean_tmp clean_test print_output zip
 
 TARGET = PasGo
 
@@ -68,7 +68,7 @@ clean_test:
 scan:
 	intercept-build make && analyze-build
 
-tgt_dir=tgt/$$i/
+tgt_dir=test_result/$$i/
 test: all
 	@echo "\e[32m> Start testing.\e[0m\n"
 	@for i in $(notdir $(patsubst %.pas, %, $(wildcard test/*.pas))) ; do \
@@ -88,3 +88,6 @@ fmt:
 
 print_output: fmt clean test
 	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'
+
+zip: clean_tmp
+	zip -r CP_Fianl_G19.zip include src test tgt .clang-format ptop.cfg Makefile README.md ${TARGET}
