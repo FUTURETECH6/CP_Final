@@ -31,10 +31,10 @@
 
 static llvm::LLVMContext globalContext;
 
-llvm::Function *createPrintf(CodeGenContext *context);
+llvm::Function *PRINTFBUILD(ContextOfCodeCreate *context);
 
 struct CodeGenBlk {
-    friend class CodeGenContext;
+    friend class ContextOfCodeCreate;
 
   private:
     llvm::BasicBlock *block;
@@ -47,41 +47,41 @@ struct CodeGenBlk {
     std::map<std::string, tree::Type *> typeMap;
 };
 
-class CodeGenContext {
+class ContextOfCodeCreate {
   private:
-    std::stack<CodeGenBlk *> CodeGenStack;
-    llvm::Function *funcMain;
-    llvm::Function *funcCur;
+    std::stack<CodeGenBlk *> STACKofCodeRUN;
+    llvm::Function *MAINOFFUNCTION;
+    llvm::Function *CURRENCTFUNCION;
 
-    llvm::Function *createPrintf();
+    llvm::Function *PRINTFBUILD();
 
   public:
     llvm::Module *pModule = new llvm::Module("main", globalContext);
-    std::map<llvm::Function *, llvm::Function *> parentMap;
+    std::map<llvm::Function *, llvm::Function *> MAPOFPARENT;
     llvm::Function *printf;
-    std::map<std::string, tree::FuncDef *> funcDefMap;
+    std::map<std::string, tree::FuncDef *> MAPOFDEFFUNC;
 
-    void generateCode(tree::Program &root, std::string file = "a.bc");
+    void CODEGENER(tree::Program &root, std::string file = "a.bc");
     void runCode();
-    llvm::Type *getLlvmType(tree::Type *type);
-    llvm::Value *getValue(std::string name);
+    llvm::Type *LLVMTYPERET(tree::Type *type);
+    llvm::Value *VALUERETGET(std::string name);
 
     // For record, find its index
-    static int getRecordIndex(tree::Type *recType, std::string name);
+    static int INDEXOFRECRETURN(tree::Type *recType, std::string name);
     // Get array[offset]'s addr
-    static llvm::Value *getAryAddr(tree::BinaryExp *exp, CodeGenContext *context);
+    static llvm::Value *ARRAYADDRRETURN(tree::BinaryExp *exp, ContextOfCodeCreate *context);
 
-    inline llvm::Function *getCurFunc() { return this->funcCur; }
-    inline void setCurFunc(llvm::Function *func) { this->funcCur = func; }
-    inline llvm::BasicBlock *getCurBasicBlk() { return CodeGenStack.top()->block; }
-    inline CodeGenBlk *getCurCodeGenBlk() { return CodeGenStack.top(); }
-    inline void pushBlock(llvm::BasicBlock *block) { CodeGenStack.push(new CodeGenBlk(block)); }
-    inline void popBlock() {
-        auto top = CodeGenStack.top();
-        CodeGenStack.pop();
-        delete top;
+    inline llvm::Function *CURRECENTFUNCRETURN() { return this->CURRENCTFUNCION; }
+    inline void CURRECENTFUNCSET(llvm::Function *func) { this->CURRENCTFUNCION = func; }
+    inline llvm::BasicBlock *BASEBLKcurRETURN() { return STACKofCodeRUN.top()->block; }
+    inline CodeGenBlk *BASECODEBLKcurRETURN() { return STACKofCodeRUN.top(); }
+    inline void BLKpush(llvm::BasicBlock *block) { STACKofCodeRUN.push(new CodeGenBlk(block)); }
+    inline void BLKpop() {
+        auto Stacktop = STACKofCodeRUN.top();
+        STACKofCodeRUN.pop();
+        delete Stacktop;
     }
-    inline void addConst(std::string name, tree::Exp *_const) { CodeGenStack.top()->constMap[name] = _const; }
+    inline void CONSTPLUS(std::string name, tree::Exp *_const) { STACKofCodeRUN.top()->constMap[name] = _const; }
 };
 
 #endif

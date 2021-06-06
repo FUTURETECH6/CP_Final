@@ -16,16 +16,16 @@ int main(int argc, char **argv) {
     cout << "after yyparse()" << endl;
     tree::visualizeTree("a.tree", treeRoot);
 
-    if (treeRoot->checkSemantics() == false) {
+    if (treeRoot->SEMANT_CHECK_LEGAL() == false) {
         return 0;
     }
     cout << "semantics passed" << endl;
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTarget();
-    CodeGenContext context;
+    ContextOfCodeCreate context;
 
-    context.generateCode(*treeRoot, "a.bc");
+    context.CODEGENER(*treeRoot, "a.bc");
 
     context.runCode();
     return 0;

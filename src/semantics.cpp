@@ -107,24 +107,24 @@ bool canFindChild(Type *pType, const std::string &basic_string) {
 }
 
 // block object
-bool Program::checkSemantics() {
-    isLegal &= define->checkSemantics();
+bool Program::SEMANT_CHECK_LEGAL() {
+    isLegal &= define->SEMANT_CHECK_LEGAL();
     if (isLegal)
-        isLegal &= body->checkSemantics();
+        isLegal &= body->SEMANT_CHECK_LEGAL();
     return isLegal;
 }
 
-bool Define::checkSemantics() {
+bool Define::SEMANT_CHECK_LEGAL() {
     for (auto itor : labelDef)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     for (auto itor : constDef)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     for (auto itor : typeDef)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     for (auto itor : varDef)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     for (auto itor : funcDef)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     if (isLegal)
         for (auto cItor : constDef) {
             if (isLegal)
@@ -194,42 +194,42 @@ bool Define::checkSemantics() {
     return isLegal;
 }
 
-bool Body::checkSemantics() {
+bool Body::SEMANT_CHECK_LEGAL() {
     for (auto itor : stms)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     return isLegal;
 }
 
-bool Situation::checkSemantics() {
+bool Situation::SEMANT_CHECK_LEGAL() {
     for (auto itor : caseVec)
-        isLegal &= itor->checkSemantics();
-    isLegal &= solution->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
+    isLegal &= solution->SEMANT_CHECK_LEGAL();
     return isLegal;
 }
 
 // define object
-bool LabelDef::checkSemantics() {
+bool LabelDef::SEMANT_CHECK_LEGAL() {
     isLegal = true;
     return isLegal;
 }
 
-bool ConstDef::checkSemantics() {
+bool ConstDef::SEMANT_CHECK_LEGAL() {
     isLegal = true;
     return isLegal;
 }
 
-bool TypeDef::checkSemantics() {
+bool TypeDef::SEMANT_CHECK_LEGAL() {
     isLegal = true;
     return isLegal;
 }
 
-bool VarDef::checkSemantics() {
+bool VarDef::SEMANT_CHECK_LEGAL() {
     isLegal = true;
     return isLegal;
 }
 
-bool FuncDef::checkSemantics() {
-    isLegal &= define->checkSemantics();
+bool FuncDef::SEMANT_CHECK_LEGAL() {
+    isLegal &= define->SEMANT_CHECK_LEGAL();
     if (isLegal) {
         for (std::string arg_name : argNameVec) {
             if (arg_name == name) {
@@ -287,7 +287,7 @@ bool FuncDef::checkSemantics() {
                 break;
             }
     if (isLegal)
-        isLegal = body->checkSemantics();
+        isLegal = body->SEMANT_CHECK_LEGAL();
     else {
         char info[200];
         sprintf(info,
@@ -300,8 +300,8 @@ bool FuncDef::checkSemantics() {
 }
 
 // stm
-bool AssignStm::checkSemantics() {
-    isLegal = leftVal->checkSemantics() && rightVal->checkSemantics();
+bool AssignStm::SEMANT_CHECK_LEGAL() {
+    isLegal = leftVal->SEMANT_CHECK_LEGAL() && rightVal->SEMANT_CHECK_LEGAL();
     if (isLegal)
         isLegal = isSameType(leftVal->returnType, rightVal->returnType);
     if (isLegal)
@@ -322,9 +322,9 @@ bool AssignStm::checkSemantics() {
     return isLegal;
 }
 
-bool CallStm::checkSemantics() {
+bool CallStm::SEMANT_CHECK_LEGAL() {
     for (auto itor : args)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     if (name == "write" || name == "writeln") {
         isLegal = true;
     } else {
@@ -359,7 +359,7 @@ bool CallStm::checkSemantics() {
     return isLegal;
 }
 
-bool CaseStm::checkSemantics() {
+bool CaseStm::SEMANT_CHECK_LEGAL() {
     // 全常量检测
     for (auto situation : situations)
         for (auto match_item : situation->caseVec)
@@ -401,9 +401,9 @@ bool CaseStm::checkSemantics() {
     return isLegal;
 }
 
-bool ForStm::checkSemantics() {
-    start->checkSemantics();
-    end->checkSemantics();
+bool ForStm::SEMANT_CHECK_LEGAL() {
+    start->SEMANT_CHECK_LEGAL();
+    end->SEMANT_CHECK_LEGAL();
     if (!((isTypeInt(start->returnType) && isTypeInt(end->returnType)) ||
             (isTypeChar(start->returnType) && isTypeChar(end->returnType)))) {
         char info[200];
@@ -411,11 +411,11 @@ bool ForStm::checkSemantics() {
         yyerror(this, info);
         isLegal = false;
     }
-    isLegal &= loop->checkSemantics();
+    isLegal &= loop->SEMANT_CHECK_LEGAL();
     return isLegal;
 }
 
-bool GotoStm::checkSemantics() {
+bool GotoStm::SEMANT_CHECK_LEGAL() {
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
@@ -425,11 +425,11 @@ bool GotoStm::checkSemantics() {
     return isLegal;
 }
 
-bool IfStm::checkSemantics() {
-    isLegal &= condition->checkSemantics();
-    isLegal &= trueBody->checkSemantics();
+bool IfStm::SEMANT_CHECK_LEGAL() {
+    isLegal &= condition->SEMANT_CHECK_LEGAL();
+    isLegal &= trueBody->SEMANT_CHECK_LEGAL();
     if (falseBody != nullptr)
-        isLegal &= falseBody->checkSemantics();
+        isLegal &= falseBody->SEMANT_CHECK_LEGAL();
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -441,7 +441,7 @@ bool IfStm::checkSemantics() {
     return isLegal;
 }
 
-bool LabelStm::checkSemantics() {
+bool LabelStm::SEMANT_CHECK_LEGAL() {
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
@@ -451,9 +451,9 @@ bool LabelStm::checkSemantics() {
     return isLegal;
 }
 
-bool RepeatStm::checkSemantics() {
-    isLegal &= condition->checkSemantics();
-    isLegal &= loop->checkSemantics();
+bool RepeatStm::SEMANT_CHECK_LEGAL() {
+    isLegal &= condition->SEMANT_CHECK_LEGAL();
+    isLegal &= loop->SEMANT_CHECK_LEGAL();
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -465,9 +465,9 @@ bool RepeatStm::checkSemantics() {
     return isLegal;
 }
 
-bool WhileStm::checkSemantics() {
-    isLegal &= condition->checkSemantics();
-    isLegal &= loop->checkSemantics();
+bool WhileStm::SEMANT_CHECK_LEGAL() {
+    isLegal &= condition->SEMANT_CHECK_LEGAL();
+    isLegal &= loop->SEMANT_CHECK_LEGAL();
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -480,8 +480,8 @@ bool WhileStm::checkSemantics() {
 }
 
 // exp
-bool UnaryExp::checkSemantics() {
-    isLegal = operand->checkSemantics();
+bool UnaryExp::SEMANT_CHECK_LEGAL() {
+    isLegal = operand->SEMANT_CHECK_LEGAL();
     if (isLegal)
         switch (opcode) {
             case OP_OPPO: {
@@ -605,12 +605,12 @@ bool UnaryExp::checkSemantics() {
     return isLegal;
 }
 
-bool BinaryExp::checkSemantics() {
-    isLegal = OPRFIRST->checkSemantics();
+bool BinaryExp::SEMANT_CHECK_LEGAL() {
+    isLegal = OPRFIRST->SEMANT_CHECK_LEGAL();
     if (isLegal)
         switch (opcode) {
             case OP_ADD: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
@@ -628,7 +628,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_MINUS: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
@@ -646,7 +646,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_MULTI: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
@@ -664,7 +664,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_RDIV: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
@@ -679,7 +679,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_DDIV: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
@@ -694,7 +694,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_MOD: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if (!isTypeInt(OPRFIRST->returnType) || !isTypeInt(OPRSECOND->returnType)) {
@@ -708,7 +708,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_AND: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if (!isTypeBoolean(OPRFIRST->returnType) || !isTypeBoolean(OPRSECOND->returnType)) {
@@ -722,7 +722,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_OR: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if (!isTypeChar(OPRFIRST->returnType) || !isTypeChar(OPRSECOND->returnType)) {
@@ -736,7 +736,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_SMALL: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -753,7 +753,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_LARGE: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -770,7 +770,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_SMALL_EQUAL: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -787,7 +787,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_LARGE_EQUAL: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -804,7 +804,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_EQUAL: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -821,7 +821,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_NOT_EQUAL: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
@@ -857,7 +857,7 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_INDEX: {
-                isLegal &= OPRSECOND->checkSemantics();
+                isLegal &= OPRSECOND->SEMANT_CHECK_LEGAL();
                 if (!isLegal)
                     return isLegal;
                 if (isTypeArray(OPRFIRST->returnType) || isTypeString(OPRFIRST->returnType)) {
@@ -888,9 +888,9 @@ bool BinaryExp::checkSemantics() {
     return isLegal;
 }
 
-bool CallExp::checkSemantics() {
+bool CallExp::SEMANT_CHECK_LEGAL() {
     for (auto itor : args)
-        isLegal &= itor->checkSemantics();
+        isLegal &= itor->SEMANT_CHECK_LEGAL();
     FuncDef *function = findFunction(name, this->father);
     if (function == nullptr) {
         isLegal = false;
@@ -923,13 +923,13 @@ bool CallExp::checkSemantics() {
     return isLegal;
 }
 
-bool ConstantExp::checkSemantics() {
+bool ConstantExp::SEMANT_CHECK_LEGAL() {
     returnType = generateTypeByValue(value);
     isLegal    = true;
     return isLegal;
 }
 
-bool VariableExp::checkSemantics() {
+bool VariableExp::SEMANT_CHECK_LEGAL() {
     // printf("breakpoint1\n");
     Base *temp = findName(name, this->father);
     if (temp == nullptr)

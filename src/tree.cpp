@@ -15,7 +15,7 @@ void tree::Define::addLabel(LabelDef *def) {
     labelDef.push_back(def);
 }
 
-void tree::Define::addConst(ConstDef *def) {
+void tree::Define::CONSTPLUS(ConstDef *def) {
     def->father = this;
     constDef.push_back(def);
 }
