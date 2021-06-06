@@ -33,7 +33,7 @@ progs: ${TARGET}
 ${TARGET}: build/parser.o build/lexer.o build/tree.o build/treeprint.o build/symbol.o build/semantics.o build/codegen.o build/main.o
 	$(CXX) $^ ${LDFLAGS} -o $@
 
-build/parser.o: build/parser.cpp
+build/parser.o: build/parser.cpp include/tree.h include/symbol.h
 	$(CXX) -o $@ -c $< ${CCFLAGS}
 build/lexer.o: build/lexer.cpp build/parser.cpp
 	$(CXX) -o $@ -c $< ${CCFLAGS}
