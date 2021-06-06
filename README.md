@@ -1,4 +1,14 @@
-# Prerequisites
+# Environment
+
+* Ubuntu 20.04.2 LTS x86_64 (5.4.0-72-generic)
+* g++ 9.3.0-17 / clang 8.0.1-9 (either one)
+* llvm 8.0.1
+* flex 2.6.4
+* bison 3.5.1
+
+# Usage
+
+## Prerequisites
 
 For building:
 
@@ -13,7 +23,7 @@ For style formatting:
 sudo apt install -y clang-format-8 fpc
 ```
 
-# Usage
+## Makefile
 
 Build only:
 
@@ -21,7 +31,7 @@ Build only:
 make
 ```
 
-Test one case:
+Test specified case:
 
 ```bash
 ./PasGo <path/to/pascal/file>
