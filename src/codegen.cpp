@@ -90,7 +90,7 @@ void ContextOfCodeCreate::CODEGENER(tree::Program &root, std::string file) {
     this->CURRENCTFUNCION = this->MAINOFFUNCTION;
     root.PascalCodeCreate(this);
     llvm::ReturnInst::Create(globalContext, this->BASEBLKcurRETURN());  // the use
-    this->BLKpop();                                                 // out
+    this->BLKpop();                                                     // out
 
     cout << "Code is generated." << endl;
 
@@ -112,7 +112,7 @@ void ContextOfCodeCreate::runCode() {
     exeEngine->finalizeObject();  // withe the use of obj
     llvm::ArrayRef<llvm::GenericValue> ARGSNO;
     exeEngine->runFunction(this->MAINOFFUNCTION,  //  FUC use
-        ARGSNO);                            //  just value
+        ARGSNO);                                  //  just value
     cout << "Code run." << endl;
 }
 
@@ -209,7 +209,7 @@ llvm::Value *tree::LabelDef::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::ConstDef::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Const defining: " << this->name << endl;
-    if (this->value->nodeType == NX_CONST_EXP) {                               // if value is const
+    if (this->value->nodeType == NX_CONST_EXP) {                                       // if value is const
         tree::EXPRESSIONConst *ZUOOPER = static_cast<EXPRESSIONConst *>(this->value);  //
         llvm::Value *ALOCT = new llvm::AllocaInst(context->LLVMTYPERET(ZUOOPER->returnType), 0, llvm::Twine(this->name),
             context->BASEBLKcurRETURN());  // with the blck out
@@ -317,7 +317,7 @@ llvm::Value *tree::FuncDef::PascalCodeCreate(ContextOfCodeCreate *context) {
 
     auto ELDFUNC = context->CURRECENTFUNCRETURN();
     context->CURRECENTFUNCSET(FUCTI);
-    auto BLCOD                = context->BASEBLKcurRETURN();
+    auto BLCOD                  = context->BASEBLKcurRETURN();
     context->MAPOFPARENT[FUCTI] = ELDFUNC;
 
     context->BLKpush(BLCT);
@@ -418,7 +418,8 @@ llvm::Value *tree::StatementAssign::PascalCodeCreate(ContextOfCodeCreate *contex
                 TMPTE = new llvm::LoadInst(TMPTE, llvm::Twine(""), false, context->BASEBLKcurRETURN());
             } while (TMPTE->getType()->isPointerTy());
 
-            return new llvm::StoreInst(this->rightVal->PascalCodeCreate(context), LOUD, false, context->BASEBLKcurRETURN());
+            return new llvm::StoreInst(
+                this->rightVal->PascalCodeCreate(context), LOUD, false, context->BASEBLKcurRETURN());
         }
     } else {  // no thing left
         cout << "[Error] Wrong left value type" << endl;
@@ -499,8 +500,8 @@ llvm::Value *tree::CallStm::PascalCodeCreate(ContextOfCodeCreate *context) {
                     case OP_DOT: {
                         if (ASTNODE->OPRSECOND->nodeType == ND_VARIABLE_EXP) {
                             VariableExp *OPRONDSECOND = static_cast<VariableExp *>(ASTNODE->OPRSECOND);
-                            int INDEXOFREC =
-                                ContextOfCodeCreate::INDEXOFRECRETURN(ASTNODE->OPRFIRST->returnType, OPRONDSECOND->name);
+                            int INDEXOFREC            = ContextOfCodeCreate::INDEXOFRECRETURN(
+                                ASTNODE->OPRFIRST->returnType, OPRONDSECOND->name);
                             vector<llvm::Value *> INDEXOFA(2);
                             INDEXOFA[0] = llvm::ConstantInt::get(globalContext, llvm::APInt(32, 0, true));
                             INDEXOFA[1] = llvm::ConstantInt::get(globalContext, llvm::APInt(32, INDEXOFREC, true));
@@ -543,7 +544,8 @@ llvm::Value *tree::CallStm::PascalCodeCreate(ContextOfCodeCreate *context) {
         }
     }
     cout << "[Success] Function called." << endl;
-    return llvm::CallInst::Create(OPWRITFUNC, llvm::makeArrayRef(VAL_PARA), llvm::Twine(""), context->BASEBLKcurRETURN());
+    return llvm::CallInst::Create(
+        OPWRITFUNC, llvm::makeArrayRef(VAL_PARA), llvm::Twine(""), context->BASEBLKcurRETURN());
 }
 
 llvm::Value *tree::LabelStm::PascalCodeCreate(ContextOfCodeCreate *context) {
@@ -552,10 +554,13 @@ llvm::Value *tree::LabelStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::IfStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "building while statement" << endl;
-    llvm::Value *TCODIN        = condition->PascalCodeCreate(context);
-    llvm::BasicBlock *BLK_YES  = llvm::BasicBlock::Create(globalContext, llvm::Twine("then"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *BLK_NO   = llvm::BasicBlock::Create(globalContext, llvm::Twine("else"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *MERGEBLK = llvm::BasicBlock::Create(globalContext, llvm::Twine("merge"), context->CURRECENTFUNCRETURN());
+    llvm::Value *TCODIN = condition->PascalCodeCreate(context);
+    llvm::BasicBlock *BLK_YES =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("then"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLK_NO =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("else"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *MERGEBLK =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("merge"), context->CURRECENTFUNCRETURN());
     cout << ">> [Success] Condition generated" << endl;
 
     llvm::Value *RYUETE =
@@ -582,7 +587,8 @@ llvm::Value *tree::IfStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::CaseStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Creating case statment" << endl;
-    llvm::BasicBlock *ESCBLK = llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *ESCBLK =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
     vector<llvm::BasicBlock *> TBLKS;
     cout << ">> Contains :" << situations.size() << "cases" << endl;
 
@@ -597,8 +603,8 @@ llvm::Value *tree::CaseStm::PascalCodeCreate(ContextOfCodeCreate *context) {
             tree::BinaryExp *CONDITION = new tree::BinaryExp(OP_EQUAL, this->object, this->situations[i]->caseVec[j]);
 
             if (i == this->situations.size() - 1 && j == this->situations[i]->caseVec.size() - 1) {  // last one
-                RETIV = llvm::BranchInst::Create(
-                    BLKBASE, ESCBLK, CONDITION->PascalCodeCreate(context), context->BASEBLKcurRETURN());  // insert the last one
+                RETIV = llvm::BranchInst::Create(BLKBASE, ESCBLK, CONDITION->PascalCodeCreate(context),
+                    context->BASEBLKcurRETURN());  // insert the last one
             } else {
                 llvm::BasicBlock *BLKNEXT =
                     llvm::BasicBlock::Create(globalContext, llvm::Twine("next"), context->CURRECENTFUNCRETURN());
@@ -637,8 +643,8 @@ llvm::Value *tree::CaseStm::PascalCodeCreate(ContextOfCodeCreate *context) {
             } else {
                 BLKNEXT = llvm::BasicBlock::Create(globalContext, "next", context->CURRECENTFUNCRETURN());
 
-                llvm::BranchInst::Create(
-                    TBLKS[p], BLKNEXT, CONDITION->PascalCodeCreate(context), context->BASEBLKcurRETURN());  // basic create
+                llvm::BranchInst::Create(TBLKS[p], BLKNEXT, CONDITION->PascalCodeCreate(context),
+                    context->BASEBLKcurRETURN());  // basic create
 
                 context->BLKpush(BLKNEXT);
             }
@@ -668,13 +674,16 @@ llvm::Value *tree::CaseStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::ForStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Creating for statement" << endl;
-    llvm::BasicBlock *BLKSRT  = llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *BLKLOP  = llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *BLKLESC = llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKSRT =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKLOP =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKLESC =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
     // 定义循环变量
-    tree::VariableExp *PARALOOP   = new tree::VariableExp(this->iter);
-    PARALOOP->returnType          = tree::findVar(this->iter, this);
-    PARALOOP->name                = this->iter;
+    tree::VariableExp *PARALOOP         = new tree::VariableExp(this->iter);
+    PARALOOP->returnType                = tree::findVar(this->iter, this);
+    PARALOOP->name                      = this->iter;
     tree::StatementAssign *LOOPINITPARA = new tree::StatementAssign(PARALOOP, this->start);
     LOOPINITPARA->PascalCodeCreate(context);
     llvm::BranchInst::Create(BLKSRT, context->BASEBLKcurRETURN());
@@ -689,11 +698,11 @@ llvm::Value *tree::ForStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
     // LOOPUPDATE
     tree::BinaryExp *LOOPUPDATE;
-    tree::Value *TMP               = new tree::Value();
-    TMP->baseType                  = TY_INT;
-    TMP->val.intVal                = this->step;
-    tree::EXPRESSIONConst *int1        = new tree::EXPRESSIONConst(TMP);
-    LOOPUPDATE                     = new tree::BinaryExp(OP_ADD, PARALOOP, int1);
+    tree::Value *TMP                     = new tree::Value();
+    TMP->baseType                        = TY_INT;
+    TMP->val.intVal                      = this->step;
+    tree::EXPRESSIONConst *int1          = new tree::EXPRESSIONConst(TMP);
+    LOOPUPDATE                           = new tree::BinaryExp(OP_ADD, PARALOOP, int1);
     tree::StatementAssign *updateLoopVar = new tree::StatementAssign(PARALOOP, LOOPUPDATE);
     updateLoopVar->PascalCodeCreate(context);
     llvm::BranchInst::Create(BLKSRT, context->BASEBLKcurRETURN());
@@ -706,9 +715,12 @@ llvm::Value *tree::ForStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::WhileStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Building WIHILE statement" << endl;
-    llvm::BasicBlock *BLKST  = llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *BLKLOP = llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
-    llvm::BasicBlock *BLKESC = llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKST =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("start"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKLOP =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKESC =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
 
     llvm::BranchInst::Create(BLKST, context->BASEBLKcurRETURN());
     context->BLKpush(BLKST);  // give the start
@@ -726,14 +738,16 @@ llvm::Value *tree::WhileStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::StatementRepeat::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Building repeat statement" << endl;
-    llvm::BasicBlock *BLKLOP = llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKLOP =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
     llvm::BranchInst::Create(BLKLOP, context->BASEBLKcurRETURN());
-    context->BLKpush(BLKLOP);    // loop
+    context->BLKpush(BLKLOP);               // loop
     this->loop->PascalCodeCreate(context);  // build blk
 
     llvm::Value *CONDITION = this->condition->PascalCodeCreate(context);  // cond
 
-    llvm::BasicBlock *BLKESC = llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
+    llvm::BasicBlock *BLKESC =
+        llvm::BasicBlock::Create(globalContext, llvm::Twine("exit"), context->CURRECENTFUNCRETURN());
 
     llvm::Instruction *RECT =
         llvm::BranchInst::Create(BLKESC, BLKLOP, CONDITION, context->BASEBLKcurRETURN());  // true jump or not
@@ -749,14 +763,15 @@ llvm::Value *tree::GotoStm::PascalCodeCreate(ContextOfCodeCreate *context) {
 
 llvm::Value *tree::UnaryExp::PascalCodeCreate(ContextOfCodeCreate *context) {
     if (this->opcode == OP_NOT) {
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT, this->operand->PascalCodeCreate(context),
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
+            this->operand->PascalCodeCreate(context),
             llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true), llvm::Twine(""),
             context->BASEBLKcurRETURN());
     } else if (this->opcode == OP_OPPO) {
         if (this->operand->returnType->baseType == TY_INT) {  // define n= 0- n
             return llvm::BinaryOperator::Create(llvm::Instruction::Sub,
-                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true), this->operand->PascalCodeCreate(context),
-                llvm::Twine(""), context->BASEBLKcurRETURN());
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                this->operand->PascalCodeCreate(context), llvm::Twine(""), context->BASEBLKcurRETURN());
         } else if (this->operand->returnType->baseType == TY_REAL) {
             return llvm::BinaryOperator::Create(llvm::Instruction::FSub,
                 llvm::ConstantFP::get(globalContext, llvm::APFloat(0.)), this->operand->PascalCodeCreate(context),
@@ -772,39 +787,39 @@ llvm::Value *tree::UnaryExp::PascalCodeCreate(ContextOfCodeCreate *context) {
             context->BASEBLKcurRETURN());
     } else if (this->opcode == OP_ODD) {  // 0 & n
         return llvm::BinaryOperator::Create(llvm::Instruction::And,
-            llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true), this->operand->PascalCodeCreate(context),
-            llvm::Twine(""), context->BASEBLKcurRETURN());
+            llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+            this->operand->PascalCodeCreate(context), llvm::Twine(""), context->BASEBLKcurRETURN());
     } else if (this->opcode == OP_ORD) {
-        return llvm::CastInst::CreateIntegerCast(this->operand->PascalCodeCreate(context), llvm::Type::getInt32Ty(globalContext),
-            true, llvm::Twine(""), context->BASEBLKcurRETURN());
+        return llvm::CastInst::CreateIntegerCast(this->operand->PascalCodeCreate(context),
+            llvm::Type::getInt32Ty(globalContext), true, llvm::Twine(""), context->BASEBLKcurRETURN());
 
     } else if (this->opcode == OP_CHR) {
-        return llvm::CastInst::CreateIntegerCast(this->operand->PascalCodeCreate(context), llvm::Type::getInt8Ty(globalContext),
-            true, llvm::Twine(""), context->BASEBLKcurRETURN());
+        return llvm::CastInst::CreateIntegerCast(this->operand->PascalCodeCreate(context),
+            llvm::Type::getInt8Ty(globalContext), true, llvm::Twine(""), context->BASEBLKcurRETURN());
 
     } else if (this->opcode == OP_ABS) {
         if (this->operand->returnType->baseType == TY_INT) {
             llvm::Value *CONDITION = llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT,
-                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true), this->operand->PascalCodeCreate(context),
-                llvm::Twine(""), context->BASEBLKcurRETURN());
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                this->operand->PascalCodeCreate(context), llvm::Twine(""), context->BASEBLKcurRETURN());
             llvm::BasicBlock *BLKDOWN =
                 llvm::BasicBlock::Create(globalContext, llvm::Twine("neg"), context->CURRECENTFUNCRETURN());
             llvm::BasicBlock *BLKUP =
                 llvm::BasicBlock::Create(globalContext, llvm::Twine("pos"), context->CURRECENTFUNCRETURN());
             llvm::BasicBlock *BLKMERGE =
                 llvm::BasicBlock::Create(globalContext, llvm::Twine("merge"), context->CURRECENTFUNCRETURN());
-            llvm::Value *RETC =
-                llvm::BranchInst::Create(BLKDOWN, BLKUP, CONDITION, context->BASEBLKcurRETURN());  // positve or negative
+            llvm::Value *RETC = llvm::BranchInst::Create(
+                BLKDOWN, BLKUP, CONDITION, context->BASEBLKcurRETURN());  // positve or negative
 
             context->BLKpush(BLKDOWN);
             llvm::BinaryOperator::Create(llvm::Instruction::Sub,
-                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true), this->operand->PascalCodeCreate(context),
-                llvm::Twine(""), context->BASEBLKcurRETURN());
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(globalContext), 0, true),
+                this->operand->PascalCodeCreate(context), llvm::Twine(""), context->BASEBLKcurRETURN());
             llvm::BranchInst::Create(BLKMERGE, context->BASEBLKcurRETURN());  // jump BLKMERGE
 
             context->BLKpop();
-            context->BLKpush(BLKUP);                                      // not true
-            this->operand->PascalCodeCreate(context);                                // abs
+            context->BLKpush(BLKUP);                                          // not true
+            this->operand->PascalCodeCreate(context);                         // abs
             llvm::BranchInst::Create(BLKMERGE, context->BASEBLKcurRETURN());  // jump BLKMERGE
             context->BLKpop();
             context->BLKpush(BLKMERGE);  // BLKMERGE
@@ -991,8 +1006,8 @@ llvm::Value *tree::CallExp::PascalCodeCreate(ContextOfCodeCreate *context) {
     auto ITERFUNPARA = FUcTION->arg_begin();
     for (tree::Exp *arg : this->args) {
         llvm::Value *funcArgValue = static_cast<llvm::Value *>(ITERFUNPARA++);
-        if (funcArgValue->getType()->isPointerTy()) {                                                   // if ptr
-            if (arg->nodeType == ND_VARIABLE_EXP) {                                                     // if vary
+        if (funcArgValue->getType()->isPointerTy()) {                                                      // if ptr
+            if (arg->nodeType == ND_VARIABLE_EXP) {                                                        // if vary
                 llvm::Value *POINTER = context->VALUERETGET(static_cast<tree::VariableExp *>(arg)->name);  // value
                 while (POINTER->getType() != llvm::Type::getInt32PtrTy(globalContext)) {
                     POINTER = new llvm::LoadInst(POINTER, llvm::Twine(""), false, context->BASEBLKcurRETURN());
@@ -1005,8 +1020,8 @@ llvm::Value *tree::CallExp::PascalCodeCreate(ContextOfCodeCreate *context) {
                     case OP_DOT: {
                         if (ASTNODE->OPRSECOND->nodeType == ND_VARIABLE_EXP) {
                             VariableExp *OPRONDSECOND = static_cast<VariableExp *>(ASTNODE->OPRSECOND);
-                            int INDEXOFREC =
-                                ContextOfCodeCreate::INDEXOFRECRETURN(ASTNODE->OPRFIRST->returnType, OPRONDSECOND->name);
+                            int INDEXOFREC            = ContextOfCodeCreate::INDEXOFRECRETURN(
+                                ASTNODE->OPRFIRST->returnType, OPRONDSECOND->name);
                             vector<llvm::Value *> INDEXOFA(2);
                             INDEXOFA[0] = llvm::ConstantInt::get(globalContext, llvm::APInt(32, 0, true));  // zero
                             INDEXOFA[1] =

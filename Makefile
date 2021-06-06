@@ -92,4 +92,4 @@ print_output: test
 	ls ${TGT_DIR} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${TGT_DIR}/{}/{}(lli output).txt"'
 
 zip: fmt test
-	zip -r ${TARGET}_G19.zip include src test ${TGT_DIR} .clang-format ptop.cfg Makefile README.md ${TARGET}
+	zip -r ${TARGET}_G19.zip include src test ${TGT_DIR} .clang-format ptop.cfg Makefile README.md ${TARGET} *.pptx *.pdf

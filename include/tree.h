@@ -14,39 +14,37 @@ namespace tree {
     class Exp; /* objects that return values */
 
     /* Clause */
-    class StatementAssign;  /* assignment clause */
-    class IfStm;  /* select clause */
-    class ForStm; /* for clause */
-    class WhileStm; /* while clause */
-    class GotoStm;  /* goto clause */
-    class LabelStm; /* label clause */
-    class StatementRepeat;  /* repeat clause */
-    class CallStm;  /* call function */
-    class CaseStm;  /* case clause */
-    
-    
+    class StatementAssign; /* assignment clause */
+    class IfStm;           /* select clause */
+    class ForStm;          /* for clause */
+    class WhileStm;        /* while clause */
+    class GotoStm;         /* goto clause */
+    class LabelStm;        /* label clause */
+    class StatementRepeat; /* repeat clause */
+    class CallStm;         /* call function */
+    class CaseStm;         /* case clause */
+
     /* Expression */
-    class UnaryExp; /* Unary operator expression */ 
-    class BinaryExp; /* binary operator expression */
-    class EXPRESSIONConst;  /* constant expression */
-    class VariableExp;  /* id expression */
-    class CallExp;  /* function call expression */
-    
+    class UnaryExp;        /* Unary operator expression */
+    class BinaryExp;       /* binary operator expression */
+    class EXPRESSIONConst; /* constant expression */
+    class VariableExp;     /* id expression */
+    class CallExp;         /* function call expression */
 
     /* Block */
-    class Program;  /* root of code */
-    class Routine;  
-    class Define;   /* root of definitions */
-    class Body; /* root of sentence block */
-    class Situation;  /* root of case clause */
+    class Program; /* root of code */
+    class Routine;
+    class Define;    /* root of definitions */
+    class Body;      /* root of sentence block */
+    class Situation; /* root of case clause */
 
     /* Define */
     class TypeDef;  /* define a single type */
-    class VarDef; /* define a variable */
+    class VarDef;   /* define a variable */
     class LabelDef; /* define a label */
     class ConstDef; /* define a constant */
     class FuncDef;  /* define a function */
-    
+
     /* Type */
     class Type;
 
@@ -60,7 +58,7 @@ namespace tree {
         bool isLegal = true;
         Base(int type = 0) : nodeType(type) {}
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) = 0;
-        virtual bool SEMANT_CHECK_LEGAL()                         = 0;
+        virtual bool SEMANT_CHECK_LEGAL()                                   = 0;
     };
 
     class Type : public Base {
@@ -212,7 +210,7 @@ namespace tree {
         std::vector<Type *> TypeofVectorPara;
         std::vector<std::string> VectorNamePara;
         std::vector<bool> FomalVectorPara; /* Pass self for formal parameters, otherwise pass ptr */
-        Type *retType  = nullptr;       /* Return null for procedures*/
+        Type *retType  = nullptr;          /* Return null for procedures*/
         Define *define = nullptr;
         Body *body     = nullptr;
         FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
@@ -401,5 +399,5 @@ namespace tree {
     Type *findVar(const std::string &typeName, Base *node);
     FuncDef *findFunction(const std::string &typeName, Base *node);
 
-}  
+}  // namespace tree
 #endif
