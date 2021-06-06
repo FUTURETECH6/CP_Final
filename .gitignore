@@ -20,3 +20,6 @@ PasGo
 compile_commands.json
 
 tgt
+
+*.pdf
+*.ppt*

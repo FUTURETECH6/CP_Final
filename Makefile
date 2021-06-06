@@ -89,5 +89,5 @@ fmt:
 print_output: fmt clean test
 	ls ${tgt_dir} | xargs -i sh -c 'echo "\n\n{}:" &&  cat "${tgt_dir}/{}/{}(lli output).txt"'
 
-zip: clean_tmp
-	zip -r CP_Fianl_G19.zip include src test tgt .clang-format ptop.cfg Makefile README.md ${TARGET}
+zip: fmt test
+	zip -r ${TARGET}_G19.zip include src test ${tgt_dir} .clang-format ptop.cfg Makefile README.md ${TARGET}
