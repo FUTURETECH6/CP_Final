@@ -14,13 +14,13 @@ namespace tree {
     class Exp; /* objects that return values */
 
     /* Clause */
-    class AssignStm;  /* assignment clause */
+    class StatementAssign;  /* assignment clause */
     class IfStm;  /* select clause */
     class ForStm; /* for clause */
     class WhileStm; /* while clause */
     class GotoStm;  /* goto clause */
     class LabelStm; /* label clause */
-    class RepeatStm;  /* repeat clause */
+    class StatementRepeat;  /* repeat clause */
     class CallStm;  /* call function */
     class CaseStm;  /* case clause */
     
@@ -28,7 +28,7 @@ namespace tree {
     /* Expression */
     class UnaryExp; /* Unary operator expression */ 
     class BinaryExp; /* binary operator expression */
-    class ConstantExp;  /* constant expression */
+    class EXPRESSIONConst;  /* constant expression */
     class VariableExp;  /* id expression */
     class CallExp;  /* function call expression */
     
@@ -92,10 +92,10 @@ namespace tree {
         Body *body     = nullptr;
         Program(const std::string &_name) : Base(ND_PROGRAM), name(_name) {}
         void PASCAL_ADD_TURN(Routine *_routine) {
-            this->setDefination(_routine->define);
+            this->DefSetup(_routine->define);
             this->setBody(_routine->body);
         }
-        void setDefination(Define *);
+        void DefSetup(Define *);
         void setBody(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
@@ -136,7 +136,7 @@ namespace tree {
       public:
         std::vector<Stm *> stms;
         Body() : Base(ND_BODY) {}
-        void addStm(Stm *);
+        void StatementAdd(Stm *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -147,7 +147,7 @@ namespace tree {
         Body *solution = nullptr;
         Situation() : Base(ND_SITUATION) {}
         void addCase(Exp *);
-        void addSolution(Body *);
+        void SolutionAdd(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -209,16 +209,16 @@ namespace tree {
     class FuncDef : public Base {
       public:
         std::string name;
-        std::vector<Type *> argTypeVec;
-        std::vector<std::string> argNameVec;
-        std::vector<bool> argFormalVec; /* Pass self for formal parameters, otherwise pass ptr */
+        std::vector<Type *> TypeofVectorPara;
+        std::vector<std::string> VectorNamePara;
+        std::vector<bool> FomalVectorPara; /* Pass self for formal parameters, otherwise pass ptr */
         Type *retType  = nullptr;       /* Return null for procedures*/
         Define *define = nullptr;
         Body *body     = nullptr;
         FuncDef(const std::string &_name) : Base(ND_FUNC_DEF), name(_name) {}
-        void addArgvs(const std::string &, Type *, bool);
+        void PARAMAdd(const std::string &, Type *, bool);
         void setReturnType(Type *);
-        void setDefination(Define *);
+        void DefSetup(Define *);
         void setBody(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
@@ -232,11 +232,11 @@ namespace tree {
         bool SEMANT_CHECK_LEGAL() override { return false; }
     };
 
-    class AssignStm : public Stm {
+    class StatementAssign : public Stm {
       public:
         Exp *leftVal;
         Exp *rightVal;
-        AssignStm(Exp *left, Exp *right) : Stm(ND_ASSIGN_STM), leftVal(left), rightVal(right) {
+        StatementAssign(Exp *left, Exp *right) : Stm(ND_ASSIGN_STM), leftVal(left), rightVal(right) {
             left->father = right->father = this;
         }
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
@@ -248,7 +248,7 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallStm(const std::string &_name) : Stm(ND_CALL_STM), name(_name) {}
-        void addArgvs(Exp *);
+        void PARAMAdd(Exp *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -267,9 +267,9 @@ namespace tree {
         Body *trueBody  = nullptr; /* Err if trueBody is null */
         Body *falseBody = nullptr; /* Falsebody can be null */
         IfStm() : Stm(ND_IF_STM) {}
-        void setCondition(Exp *);
-        void addTrue(Body *);
-        void addFalse(Body *);
+        void ConditionSetup(Exp *);
+        void TrueAdd(Body *);
+        void FalseAdd(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -279,7 +279,7 @@ namespace tree {
         Exp *object;
         std::vector<Situation *> situations;
         CaseStm(Exp *_object) : Stm(ND_CASE_STM), object(_object) {}
-        void addSituation(Situation *);
+        void SituaAdd(Situation *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -294,7 +294,7 @@ namespace tree {
             : Stm(ND_FOR_STM), iter(_iter), start(_start), end(_end), step(_step) {
             _start->father = _end->father = this;
         }
-        void addLoop(Body *);
+        void LoopAdd(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -304,18 +304,18 @@ namespace tree {
         Exp *condition = nullptr;
         Body *loop     = nullptr;
         WhileStm(Exp *_condition) : Stm(ND_WHILE_STM), condition(_condition) { _condition->father = this; }
-        void addLoop(Body *);
+        void LoopAdd(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
 
-    class RepeatStm : public Stm {
+    class StatementRepeat : public Stm {
       public:
         Exp *condition = nullptr;
         Body *loop     = nullptr;
-        RepeatStm() : Stm(ND_REPEAT_STM) {}
-        void setCondition(Exp *);
-        void addLoop(Body *);
+        StatementRepeat() : Stm(ND_REPEAT_STM) {}
+        void ConditionSetup(Exp *);
+        void LoopAdd(Body *);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
@@ -356,15 +356,15 @@ namespace tree {
         std::string name;
         std::vector<Exp *> args;
         CallExp(const std::string &_name) : Exp(ND_CALL_EXP), name(_name) {}
-        void addArgvs(Exp *args);
+        void PARAMAdd(Exp *args);
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };
 
-    class ConstantExp : public Exp {
+    class EXPRESSIONConst : public Exp {
       public:
         Value *value;
-        ConstantExp(Value *_value) : Exp(NX_CONST_EXP), value(_value) { returnVal = _value; }
+        EXPRESSIONConst(Value *_value) : Exp(NX_CONST_EXP), value(_value) { returnVal = _value; }
         virtual llvm::Value *PascalCodeCreate(ContextOfCodeCreate *context) override;
         bool SEMANT_CHECK_LEGAL() override;
     };

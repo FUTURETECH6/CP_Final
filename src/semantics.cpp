@@ -231,7 +231,7 @@ bool VarDef::SEMANT_CHECK_LEGAL() {
 bool FuncDef::SEMANT_CHECK_LEGAL() {
     isLegal &= define->SEMANT_CHECK_LEGAL();
     if (isLegal) {
-        for (std::string arg_name : argNameVec) {
+        for (std::string arg_name : VectorNamePara) {
             if (arg_name == name) {
                 isLegal = false;
                 break;
@@ -300,7 +300,7 @@ bool FuncDef::SEMANT_CHECK_LEGAL() {
 }
 
 // stm
-bool AssignStm::SEMANT_CHECK_LEGAL() {
+bool StatementAssign::SEMANT_CHECK_LEGAL() {
     isLegal = leftVal->SEMANT_CHECK_LEGAL() && rightVal->SEMANT_CHECK_LEGAL();
     if (isLegal)
         isLegal = isSameType(leftVal->returnType, rightVal->returnType);
@@ -334,7 +334,7 @@ bool CallStm::SEMANT_CHECK_LEGAL() {
             char info[200];
             sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
             yyerror(this, info);
-        } else if (args.size() != function->argTypeVec.size()) {
+        } else if (args.size() != function->TypeofVectorPara.size()) {
             isLegal = false;
             char info[200];
             sprintf(info,
@@ -344,7 +344,7 @@ bool CallStm::SEMANT_CHECK_LEGAL() {
             yyerror(this, info);
         } else {
             for (int i = 0; i < args.size(); i++)
-                if (!isSameType(args[i]->returnType, function->argTypeVec[i])) {
+                if (!isSameType(args[i]->returnType, function->TypeofVectorPara[i])) {
                     isLegal = false;
                     char info[200];
                     sprintf(info,
@@ -451,7 +451,7 @@ bool LabelStm::SEMANT_CHECK_LEGAL() {
     return isLegal;
 }
 
-bool RepeatStm::SEMANT_CHECK_LEGAL() {
+bool StatementRepeat::SEMANT_CHECK_LEGAL() {
     isLegal &= condition->SEMANT_CHECK_LEGAL();
     isLegal &= loop->SEMANT_CHECK_LEGAL();
     if (isTypeBoolean(condition->returnType))
@@ -897,7 +897,7 @@ bool CallExp::SEMANT_CHECK_LEGAL() {
         char info[200];
         sprintf(info, "Semantics Error: Cannot find function %s to call.", name.c_str());
         yyerror(this, info);
-    } else if (args.size() != function->argTypeVec.size()) {
+    } else if (args.size() != function->TypeofVectorPara.size()) {
         isLegal = false;
         char info[200];
         sprintf(info,
@@ -907,7 +907,7 @@ bool CallExp::SEMANT_CHECK_LEGAL() {
         yyerror(this, info);
     } else {
         for (int i = 0; i < args.size(); i++)
-            if (!isSameType(args[i]->returnType, function->argTypeVec[i])) {
+            if (!isSameType(args[i]->returnType, function->TypeofVectorPara[i])) {
                 isLegal = false;
                 char info[200];
                 sprintf(info,
@@ -923,7 +923,7 @@ bool CallExp::SEMANT_CHECK_LEGAL() {
     return isLegal;
 }
 
-bool ConstantExp::SEMANT_CHECK_LEGAL() {
+bool EXPRESSIONConst::SEMANT_CHECK_LEGAL() {
     returnType = generateTypeByValue(value);
     isLegal    = true;
     return isLegal;

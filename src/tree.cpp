@@ -3,7 +3,7 @@
 #include <iostream>
 
 // functions for Program
-void tree::Program::setDefination(Define *define) {
+void tree::Program::DefSetup(Define *define) {
     if (this->define == nullptr) {
         define->father = this;
         this->define   = define;
@@ -41,7 +41,7 @@ void tree::Program::setBody(Body *body) {
     }
 }
 
-void tree::Body::addStm(Stm *stm) {
+void tree::Body::StatementAdd(Stm *stm) {
     stm->father = this;
     stms.push_back(stm);
 }
@@ -51,18 +51,18 @@ void tree::Situation::addCase(Exp *exp) {
     caseVec.push_back(exp);
 }
 
-void tree::Situation::addSolution(Body *body) {
+void tree::Situation::SolutionAdd(Body *body) {
     if (solution == nullptr) {
         body->father = this;
         solution     = body;
     }
 }
 
-void tree::FuncDef::addArgvs(const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
+void tree::FuncDef::PARAMAdd(const std::string &arg_name, Type *arg_type, bool is_formal_parameter) {
     arg_type->father = this;
-    argNameVec.push_back(arg_name);
-    argTypeVec.push_back(arg_type);
-    argFormalVec.push_back(is_formal_parameter);
+    VectorNamePara.push_back(arg_name);
+    TypeofVectorPara.push_back(arg_type);
+    FomalVectorPara.push_back(is_formal_parameter);
 }
 
 void tree::FuncDef::setReturnType(Type *retType) {
@@ -72,7 +72,7 @@ void tree::FuncDef::setReturnType(Type *retType) {
     }
 }
 
-void tree::FuncDef::setDefination(Define *def) {
+void tree::FuncDef::DefSetup(Define *def) {
     if (define == nullptr) {
         def->father = this;
         define      = def;
@@ -86,60 +86,60 @@ void tree::FuncDef::setBody(Body *body) {
     }
 }
 
-void tree::CallStm::addArgvs(Exp *exp) {
+void tree::CallStm::PARAMAdd(Exp *exp) {
     exp->father = this;
     this->args.push_back(exp);
 }
 
-void tree::IfStm::setCondition(Exp *cond) {
+void tree::IfStm::ConditionSetup(Exp *cond) {
     if (this->condition == nullptr) {
         cond->father = this;
         condition    = cond;
     }
 }
 
-void tree::IfStm::addTrue(Body *body) {
+void tree::IfStm::TrueAdd(Body *body) {
     if (this->trueBody == nullptr) {
         this->trueBody = body;
         body->father   = this;
     }
 }
 
-void tree::IfStm::addFalse(Body *body) {
+void tree::IfStm::FalseAdd(Body *body) {
     if (this->falseBody == nullptr) {
         this->falseBody         = body;
         this->falseBody->father = this;
     }
 }
 
-void tree::CaseStm::addSituation(Situation *situation) {
+void tree::CaseStm::SituaAdd(Situation *situation) {
     situation->father = this;
     situations.push_back(situation);
 }
 
-void tree::ForStm::addLoop(Body *body) {
+void tree::ForStm::LoopAdd(Body *body) {
     if (loop == nullptr) {
         loop         = body;
         body->father = this;
     }
 }
 
-void tree::WhileStm::addLoop(Body *body) {
+void tree::WhileStm::LoopAdd(Body *body) {
     if (loop == nullptr) {
         loop         = body;
         body->father = this;
     }
 }
 
-// functions for RepeatStm
-void tree::RepeatStm::setCondition(Exp *cond) {
+// functions for StatementRepeat
+void tree::StatementRepeat::ConditionSetup(Exp *cond) {
     if (condition == nullptr) {
         condition    = cond;
         cond->father = this;
     }
 }
 
-void tree::RepeatStm::addLoop(Body *body) {
+void tree::StatementRepeat::LoopAdd(Body *body) {
     if (loop == nullptr) {
         loop         = body;
         body->father = this;
@@ -147,7 +147,7 @@ void tree::RepeatStm::addLoop(Body *body) {
 }
 
 // functions for CallExp
-void tree::CallExp::addArgvs(Exp *exp) {
+void tree::CallExp::PARAMAdd(Exp *exp) {
     exp->father = this;
     args.push_back(exp);
 }
@@ -260,9 +260,9 @@ tree::Base *tree::findName(const std::string &name, tree::Base *node) {
             auto *f_node = (FuncDef *)node;
             if (f_node->name == name)
                 return f_node;
-            for (int i = 0; i < f_node->argNameVec.size(); i++)
-                if (f_node->argNameVec[i] == name)
-                    return new ArgDef(f_node->argTypeVec[i]);
+            for (int i = 0; i < f_node->VectorNamePara.size(); i++)
+                if (f_node->VectorNamePara[i] == name)
+                    return new ArgDef(f_node->TypeofVectorPara[i]);
             Define *d_node = f_node->define;
             for (ConstDef *iter : d_node->constDef)
                 if (iter->name == name)

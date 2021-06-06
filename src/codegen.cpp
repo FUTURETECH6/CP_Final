@@ -210,7 +210,7 @@ llvm::Value *tree::LabelDef::PascalCodeCreate(ContextOfCodeCreate *context) {
 llvm::Value *tree::ConstDef::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Const defining: " << this->name << endl;
     if (this->value->nodeType == NX_CONST_EXP) {                               // if value is const
-        tree::ConstantExp *ZUOOPER = static_cast<ConstantExp *>(this->value);  //
+        tree::EXPRESSIONConst *ZUOOPER = static_cast<EXPRESSIONConst *>(this->value);  //
         llvm::Value *ALOCT = new llvm::AllocaInst(context->LLVMTYPERET(ZUOOPER->returnType), 0, llvm::Twine(this->name),
             context->BASEBLKcurRETURN());  // with the blck out
         llvm::Value *TOSE  = new llvm::StoreInst(
@@ -300,11 +300,11 @@ llvm::Value *tree::FuncDef::PascalCodeCreate(ContextOfCodeCreate *context) {
 
     vector<llvm::Type *> WTAGT;
     int i = 0;
-    while (i < this->argTypeVec.size()) {
-        if (this->argFormalVec[i])  // pass value
+    while (i < this->TypeofVectorPara.size()) {
+        if (this->FomalVectorPara[i])  // pass value
             WTAGT.push_back(llvm::Type::getInt32PtrTy(globalContext));
         else
-            WTAGT.push_back(context->LLVMTYPERET(this->argTypeVec[i]));
+            WTAGT.push_back(context->LLVMTYPERET(this->TypeofVectorPara[i]));
         i++;
     }
 
@@ -327,17 +327,17 @@ llvm::Value *tree::FuncDef::PascalCodeCreate(ContextOfCodeCreate *context) {
     int k                      = 0;
     while (k < WTAGT.size()) {
         llvm::Type *OPTYE;
-        if (this->argFormalVec[k]) {
+        if (this->FomalVectorPara[k]) {
             OPTYE = llvm::Type::getInt32PtrTy(globalContext);
-            cout << ">> Define of Formal argument : " << this->argNameVec[k] << endl;
+            cout << ">> Define of Formal argument : " << this->VectorNamePara[k] << endl;
         } else {
-            OPTYE = context->LLVMTYPERET(this->argTypeVec[k]);
-            cout << ">> Define of paramater: " << this->argNameVec[k] << endl;
+            OPTYE = context->LLVMTYPERET(this->TypeofVectorPara[k]);
+            cout << ">> Define of paramater: " << this->VectorNamePara[k] << endl;
         }
         llvm::Value *TALLOC =
-            new llvm::AllocaInst(OPTYE, 0, llvm::Twine(this->argNameVec[k]), context->BASEBLKcurRETURN());
+            new llvm::AllocaInst(OPTYE, 0, llvm::Twine(this->VectorNamePara[k]), context->BASEBLKcurRETURN());
         VALUEOFPARA = ITOROFPARA++;
-        VALUEOFPARA->setName(llvm::Twine(this->argNameVec[k]));
+        VALUEOFPARA->setName(llvm::Twine(this->VectorNamePara[k]));
         new llvm::StoreInst(VALUEOFPARA, TALLOC, false, BLCT);
         k++;
     }
@@ -384,7 +384,7 @@ llvm::Value *tree::FuncDef::PascalCodeCreate(ContextOfCodeCreate *context) {
     return FUCTI;
 }
 
-llvm::Value *tree::AssignStm::PascalCodeCreate(ContextOfCodeCreate *context) {
+llvm::Value *tree::StatementAssign::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Creating assignment statment..." << endl;
 
     if (this->leftVal->nodeType == ND_BINARY_EXP) {  // left value of two expr
@@ -675,7 +675,7 @@ llvm::Value *tree::ForStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     tree::VariableExp *PARALOOP   = new tree::VariableExp(this->iter);
     PARALOOP->returnType          = tree::findVar(this->iter, this);
     PARALOOP->name                = this->iter;
-    tree::AssignStm *LOOPINITPARA = new tree::AssignStm(PARALOOP, this->start);
+    tree::StatementAssign *LOOPINITPARA = new tree::StatementAssign(PARALOOP, this->start);
     LOOPINITPARA->PascalCodeCreate(context);
     llvm::BranchInst::Create(BLKSRT, context->BASEBLKcurRETURN());
 
@@ -692,9 +692,9 @@ llvm::Value *tree::ForStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     tree::Value *TMP               = new tree::Value();
     TMP->baseType                  = TY_INT;
     TMP->val.intVal                = this->step;
-    tree::ConstantExp *int1        = new tree::ConstantExp(TMP);
+    tree::EXPRESSIONConst *int1        = new tree::EXPRESSIONConst(TMP);
     LOOPUPDATE                     = new tree::BinaryExp(OP_ADD, PARALOOP, int1);
-    tree::AssignStm *updateLoopVar = new tree::AssignStm(PARALOOP, LOOPUPDATE);
+    tree::StatementAssign *updateLoopVar = new tree::StatementAssign(PARALOOP, LOOPUPDATE);
     updateLoopVar->PascalCodeCreate(context);
     llvm::BranchInst::Create(BLKSRT, context->BASEBLKcurRETURN());
     context->BLKpop();
@@ -724,7 +724,7 @@ llvm::Value *tree::WhileStm::PascalCodeCreate(ContextOfCodeCreate *context) {
     return RECT;
 }
 
-llvm::Value *tree::RepeatStm::PascalCodeCreate(ContextOfCodeCreate *context) {
+llvm::Value *tree::StatementRepeat::PascalCodeCreate(ContextOfCodeCreate *context) {
     cout << "Building repeat statement" << endl;
     llvm::BasicBlock *BLKLOP = llvm::BasicBlock::Create(globalContext, llvm::Twine("loop"), context->CURRECENTFUNCRETURN());
     llvm::BranchInst::Create(BLKLOP, context->BASEBLKcurRETURN());
@@ -1052,7 +1052,7 @@ llvm::Value *tree::CallExp::PascalCodeCreate(ContextOfCodeCreate *context) {
     return llvm::CallInst::Create(FUcTION, llvm::makeArrayRef(VALUEPARA), llvm::Twine(""), context->BASEBLKcurRETURN());
 }
 
-llvm::Value *tree::ConstantExp::PascalCodeCreate(ContextOfCodeCreate *context) {
+llvm::Value *tree::EXPRESSIONConst::PascalCodeCreate(ContextOfCodeCreate *context) {
     return value->PascalCodeCreate(context);
 }
 

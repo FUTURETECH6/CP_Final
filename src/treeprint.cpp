@@ -180,16 +180,16 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("args: ");
-                for (int i = 0; i < node->argNameVec.size(); i++) {
+                for (int i = 0; i < node->VectorNamePara.size(); i++) {
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("var_name: ");
-                    str.append(node->argNameVec[i]);
+                    str.append(node->VectorNamePara[i]);
                     str.append("\n");
                     str.append(print_tab(layer));
                     str.append("arg_is_formal_parameter: ");
-                    str.append(print_rec(node->argTypeVec[i], layer + 1));
-                    str.append(node->argFormalVec[i] ? " true" : " false");
+                    str.append(print_rec(node->TypeofVectorPara[i], layer + 1));
+                    str.append(node->FomalVectorPara[i] ? " true" : " false");
                 }
                 if (node->retType != nullptr) {
                     str.append("\n");
@@ -210,7 +210,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
             } break;
 
             case ND_ASSIGN_STM: {
-                auto *node = (tree::AssignStm *)ori_node;
+                auto *node = (tree::StatementAssign *)ori_node;
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("left: ");
@@ -298,7 +298,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
             case ND_LABEL_STM: str.append(print_tab(layer)); break;
 
             case ND_REPEAT_STM: {
-                auto *node = (tree::RepeatStm *)ori_node;
+                auto *node = (tree::StatementRepeat *)ori_node;
                 // str.append("\n");
                 str.append(print_tab(layer));
                 str.append("body: ");
@@ -359,7 +359,7 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
             } break;
 
             case NX_CONST_EXP: {
-                auto *node = (tree::ConstantExp *)ori_node;
+                auto *node = (tree::EXPRESSIONConst *)ori_node;
                 str.append("\n");
                 if (noNext == false)
                     str.append(print_tab(layer));
@@ -446,12 +446,12 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                     } break;
 
                     default: {
-                        str.append("\"There is something wrong. The type cannot be recognised.\"");
+                        str.append("\"Error. The type cannot be recognised.\"");
                     }
                 }
             } break;
             default: {
-                str.append("\"There is something wrong. The node is unrecognised.\"");
+                str.append("\"Error. The node is unrecognised.\"");
             }
         }
     }
