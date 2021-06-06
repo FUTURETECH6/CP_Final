@@ -606,69 +606,69 @@ bool UnaryExp::checkSemantics() {
 }
 
 bool BinaryExp::checkSemantics() {
-    isLegal = operand1->checkSemantics();
+    isLegal = OPRFIRST->checkSemantics();
     if (isLegal)
         switch (opcode) {
             case OP_ADD: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'+\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                    if (isTypeReal(OPRFIRST->returnType) || isTypeReal(OPRSECOND->returnType))
                         returnType = new Type(TY_REAL);
                     else
                         returnType = new Type(TY_INT);
                 }
             } break;
             case OP_MINUS: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'-\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                    if (isTypeReal(OPRFIRST->returnType) || isTypeReal(OPRSECOND->returnType))
                         returnType = new Type(TY_REAL);
                     else
                         returnType = new Type(TY_INT);
                 }
             } break;
             case OP_MULTI: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'*\' must be integer or real.");
                     yyerror(this, info);
                     isLegal = false;
                 } else {
-                    if (isTypeReal(operand1->returnType) || isTypeReal(operand2->returnType))
+                    if (isTypeReal(OPRFIRST->returnType) || isTypeReal(OPRSECOND->returnType))
                         returnType = new Type(TY_REAL);
                     else
                         returnType = new Type(TY_INT);
                 }
             } break;
             case OP_RDIV: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'/\' must be integer or real.");
@@ -679,11 +679,11 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_DDIV: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'div\' must be integer or real.");
@@ -694,10 +694,10 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_MOD: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeInt(operand1->returnType) || !isTypeInt(operand2->returnType)) {
+                if (!isTypeInt(OPRFIRST->returnType) || !isTypeInt(OPRSECOND->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'%%\' must be integer.");
@@ -708,10 +708,10 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_AND: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeBoolean(operand1->returnType) || !isTypeBoolean(operand2->returnType)) {
+                if (!isTypeBoolean(OPRFIRST->returnType) || !isTypeBoolean(OPRSECOND->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'and\' must be boolean.");
@@ -722,10 +722,10 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_OR: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (!isTypeChar(operand1->returnType) || !isTypeChar(operand2->returnType)) {
+                if (!isTypeChar(OPRFIRST->returnType) || !isTypeChar(OPRSECOND->returnType)) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'or\' must be boolean.");
@@ -736,13 +736,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_SMALL: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<\' must be integer, real or char.");
@@ -753,13 +753,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_LARGE: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'>\' must be integer, real or char.");
@@ -770,13 +770,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_SMALL_EQUAL: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<=\' must be integer, real or char.");
@@ -787,13 +787,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_LARGE_EQUAL: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'>=\' must be integer, real or char.");
@@ -804,13 +804,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_EQUAL: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'=\' must be integer, real or char.");
@@ -821,13 +821,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_NOT_EQUAL: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if ((!isTypeInt(operand1->returnType) && !isTypeReal(operand1->returnType) &&
-                        !isTypeChar(operand1->returnType)) ||
-                    (!isTypeInt(operand2->returnType) && !isTypeReal(operand2->returnType) &&
-                        !isTypeChar(operand1->returnType))) {
+                if ((!isTypeInt(OPRFIRST->returnType) && !isTypeReal(OPRFIRST->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType)) ||
+                    (!isTypeInt(OPRSECOND->returnType) && !isTypeReal(OPRSECOND->returnType) &&
+                        !isTypeChar(OPRFIRST->returnType))) {
                     char info[200];
                     sprintf(info, "Semantics Error: The type of operands with a binary "
                                   "operator \'<>\' must be integer, real or char.");
@@ -838,13 +838,13 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_DOT: {
-                if (isTypeRecord(operand1->returnType))
-                    if (canFindChild(operand1->returnType, ((VariableExp *)operand2)->name))
-                        returnType = copyType(findChildType(operand1->returnType, ((VariableExp *)operand2)->name));
+                if (isTypeRecord(OPRFIRST->returnType))
+                    if (canFindChild(OPRFIRST->returnType, ((VariableExp *)OPRSECOND)->name))
+                        returnType = copyType(findChildType(OPRFIRST->returnType, ((VariableExp *)OPRSECOND)->name));
                     else {
                         char info[200];
                         sprintf(info, "Semantics Error: Cannot find child named %s in this record.",
-                            (((VariableExp *)operand2)->name).c_str());
+                            (((VariableExp *)OPRSECOND)->name).c_str());
                         yyerror(this, info);
                         isLegal = false;
                     }
@@ -857,12 +857,12 @@ bool BinaryExp::checkSemantics() {
                 }
             } break;
             case OP_INDEX: {
-                isLegal &= operand2->checkSemantics();
+                isLegal &= OPRSECOND->checkSemantics();
                 if (!isLegal)
                     return isLegal;
-                if (isTypeArray(operand1->returnType) || isTypeString(operand1->returnType)) {
-                    if (isTypeInt(operand2->returnType) || isTypeChar(operand2->returnType)) {
-                        returnType = copyType(operand1->returnType->childType[0]);
+                if (isTypeArray(OPRFIRST->returnType) || isTypeString(OPRFIRST->returnType)) {
+                    if (isTypeInt(OPRSECOND->returnType) || isTypeChar(OPRSECOND->returnType)) {
+                        returnType = copyType(OPRFIRST->returnType->childType[0]);
                     } else {
                         char info[200];
                         sprintf(info, "Semantics Error: The index must be integer or char.");

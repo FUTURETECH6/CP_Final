@@ -340,10 +340,10 @@ namespace tree {
     class BinaryExp : public Exp {
       public:
         int opcode;
-        Exp *operand1, *operand2;
-        BinaryExp(int _opcode, Exp *_operand1, Exp *_operand2)
-            : Exp(ND_BINARY_EXP), opcode(_opcode), operand1(_operand1), operand2(_operand2) {
-            _operand1->father = operand2->father = this;
+        Exp *OPRFIRST, *OPRSECOND;
+        BinaryExp(int _opcode, Exp *_OPRFIRST, Exp *_OPRSECOND)
+            : Exp(ND_BINARY_EXP), opcode(_opcode), OPRFIRST(_OPRFIRST), OPRSECOND(_OPRSECOND) {
+            _OPRFIRST->father = OPRSECOND->father = this;
         }
         virtual llvm::Value *codeGen(CodeGenContext *context) override;
         bool checkSemantics() override;

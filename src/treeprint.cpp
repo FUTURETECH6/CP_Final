@@ -330,11 +330,11 @@ std::string print_rec(tree::Base *ori_node, int layer, bool noNext = true) {
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("operand 1: ");
-                str.append(print_rec(node->operand1, layer + 1));
+                str.append(print_rec(node->OPRFIRST, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("operand 2: ");
-                str.append(print_rec(node->operand2, layer + 1));
+                str.append(print_rec(node->OPRSECOND, layer + 1));
                 str.append("\n");
                 str.append(print_tab(layer));
                 str.append("returnType: ");
