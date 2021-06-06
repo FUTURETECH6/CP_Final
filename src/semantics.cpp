@@ -3,8 +3,8 @@
 
 using namespace tree;
 
-void yyerror(Base *err_node, const char *info) {
-    fprintf(stderr, "%p: %s\n", err_node, info);
+void yyerror(Base *errNode, const char *info) {
+    fprintf(stderr, "%p: %s\n", errNode, info);
 }
 
 bool isTypeBoolean(Type *type) {
@@ -91,7 +91,7 @@ Type *generateTypeByValue(Value *value) {
 Type *findChildType(Type *pType, const std::string &basic_string) {
     if (pType->baseType != TY_RECORD)
         return nullptr;
-    for (Type *child : pType->childType)
+    for (auto child : pType->childType)
         if (child->name == basic_string)
             return child;
     return nullptr;
@@ -100,7 +100,7 @@ Type *findChildType(Type *pType, const std::string &basic_string) {
 bool canFindChild(Type *pType, const std::string &basic_string) {
     if (pType->baseType != TY_RECORD)
         return false;
-    for (Type *child : pType->childType)
+    for (auto child : pType->childType)
         if (child->name == basic_string)
             return true;
     return false;
@@ -108,155 +108,127 @@ bool canFindChild(Type *pType, const std::string &basic_string) {
 
 // block object
 bool Program::checkSemantics() {
-    // check children
     isLegal &= define->checkSemantics();
     if (isLegal)
         isLegal &= body->checkSemantics();
-    // check between children
-    // check itself
     return isLegal;
 }
 
 bool Define::checkSemantics() {
-    // check children
-    for (LabelDef *iter : labelDef)
-        isLegal &= iter->checkSemantics();
-    for (ConstDef *iter : constDef)
-        isLegal &= iter->checkSemantics();
-    for (TypeDef *iter : typeDef)
-        isLegal &= iter->checkSemantics();
-    for (VarDef *iter : varDef)
-        isLegal &= iter->checkSemantics();
-    for (FuncDef *iter : funcDef)
-        isLegal &= iter->checkSemantics();
-    // check between children
+    for (auto itor : labelDef)
+        isLegal &= itor->checkSemantics();
+    for (auto itor : constDef)
+        isLegal &= itor->checkSemantics();
+    for (auto itor : typeDef)
+        isLegal &= itor->checkSemantics();
+    for (auto itor : varDef)
+        isLegal &= itor->checkSemantics();
+    for (auto itor : funcDef)
+        isLegal &= itor->checkSemantics();
     if (isLegal)
-        for (ConstDef *c_iter : constDef) {
+        for (auto cItor : constDef) {
             if (isLegal)
-                for (TypeDef *t_iter : typeDef)
-                    if (c_iter->name == t_iter->name) {
+                for (auto tItor : typeDef) {
+                    if (cItor->name == tItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
+                    }
+                }
             else
                 break;
             if (isLegal)
-                for (VarDef *v_iter : varDef)
-                    if (c_iter->name == v_iter->name) {
+                for (auto vItor : varDef) {
+                    if (cItor->name == vItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
+                    }
+                }
             else
                 break;
             if (isLegal)
-                for (FuncDef *f_iter : funcDef)
-                    if (c_iter->name == f_iter->name) {
+                for (auto fItor : funcDef) {
+                    if (cItor->name == fItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
+                    }
+                }
             else
                 break;
         }
     if (isLegal)
-        for (TypeDef *t_iter : typeDef) {
+        for (auto tItor : typeDef) {
             if (isLegal)
-                for (VarDef *v_iter : varDef)
-                    if (t_iter->name == v_iter->name) {
+                for (auto vItor : varDef) {
+                    if (tItor->name == vItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
+                    }
+                }
             else
                 break;
             if (isLegal)
-                for (FuncDef *f_iter : funcDef)
-                    if (t_iter->name == f_iter->name) {
+                for (auto fItor : funcDef) {
+                    if (tItor->name == fItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
+                    }
+                }
             else
                 break;
         }
     if (isLegal)
-        for (VarDef *v_iter : varDef) {
-            if (isLegal)
-                for (FuncDef *f_iter : funcDef)
-                    if (v_iter->name == f_iter->name) {
+        for (auto vItor : varDef) {
+            if (isLegal) {
+                for (auto fItor : funcDef)
+                    if (vItor->name == fItor->name) {
                         isLegal = false;
                         break;
-                    } else
-                        ;
-            else
+                    }
+            } else
                 break;
         }
     if (!isLegal) {
-        char info[200];
-        sprintf(info, "Semantics Error: There are at least two obeject in define part, which "
+        yyerror(this, "Semantics Error: There are at least two obeject in define part, which "
                       "has the same name.");
-        yyerror(this, info);
     }
-    // check itself
     return isLegal;
 }
 
 bool Body::checkSemantics() {
-    // check children
-    for (Stm *iter : stms)
-        isLegal &= iter->checkSemantics();
-    // check between children
-    // check itself
+    for (auto itor : stms)
+        isLegal &= itor->checkSemantics();
     return isLegal;
 }
 
 bool Situation::checkSemantics() {
-    // check children
-    for (Exp *iter : caseVec)
-        isLegal &= iter->checkSemantics();
+    for (auto itor : caseVec)
+        isLegal &= itor->checkSemantics();
     isLegal &= solution->checkSemantics();
-    // check between children
-    // check itself
     return isLegal;
 }
 
 // define object
 bool LabelDef::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal = true;
     return isLegal;
 }
 
 bool ConstDef::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal = true;
     return isLegal;
 }
 
 bool TypeDef::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal = true;
     return isLegal;
 }
 
 bool VarDef::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal = true;
     return isLegal;
 }
 
 bool FuncDef::checkSemantics() {
-    // check children
     isLegal &= define->checkSemantics();
     if (isLegal) {
         for (std::string arg_name : argNameVec) {
@@ -265,52 +237,52 @@ bool FuncDef::checkSemantics() {
                 break;
             }
             if (isLegal)
-                for (ConstDef *iter : define->constDef)
-                    if (iter->name == arg_name) {
+                for (auto itor : define->constDef)
+                    if (itor->name == arg_name) {
                         isLegal = false;
                         break;
                     }
             if (isLegal)
-                for (TypeDef *iter : define->typeDef)
-                    if (iter->name == arg_name) {
+                for (auto itor : define->typeDef)
+                    if (itor->name == arg_name) {
                         isLegal = false;
                         break;
                     }
             if (isLegal)
-                for (VarDef *iter : define->varDef)
-                    if (iter->name == arg_name) {
+                for (auto itor : define->varDef)
+                    if (itor->name == arg_name) {
                         isLegal = false;
                         break;
                     }
             if (isLegal)
-                for (FuncDef *iter : define->funcDef)
-                    if (iter->name == arg_name) {
+                for (auto itor : define->funcDef)
+                    if (itor->name == arg_name) {
                         isLegal = false;
                         break;
                     }
         }
     }
     if (isLegal)
-        for (ConstDef *iter : define->constDef)
-            if (iter->name == name) {
+        for (auto itor : define->constDef)
+            if (itor->name == name) {
                 isLegal = false;
                 break;
             }
     if (isLegal)
-        for (TypeDef *iter : define->typeDef)
-            if (iter->name == name) {
+        for (auto itor : define->typeDef)
+            if (itor->name == name) {
                 isLegal = false;
                 break;
             }
     if (isLegal)
-        for (VarDef *iter : define->varDef)
-            if (iter->name == name) {
+        for (auto itor : define->varDef)
+            if (itor->name == name) {
                 isLegal = false;
                 break;
             }
     if (isLegal)
-        for (FuncDef *iter : define->funcDef)
-            if (iter->name == name) {
+        for (auto itor : define->funcDef)
+            if (itor->name == name) {
                 isLegal = false;
                 break;
             }
@@ -324,19 +296,14 @@ bool FuncDef::checkSemantics() {
             name.c_str());
         yyerror(this, info);
     }
-    // check between children
-    // check itself
     return isLegal;
 }
 
 // stm
 bool AssignStm::checkSemantics() {
-    // check children
     isLegal = leftVal->checkSemantics() && rightVal->checkSemantics();
-    // check between children
     if (isLegal)
         isLegal = isSameType(leftVal->returnType, rightVal->returnType);
-    // check itself
     if (isLegal)
         if (leftVal->returnVal != nullptr) {
             isLegal = false;
@@ -356,11 +323,8 @@ bool AssignStm::checkSemantics() {
 }
 
 bool CallStm::checkSemantics() {
-    // check children
-    for (Exp *iter : args)
-        isLegal &= iter->checkSemantics();
-    // check between children
-    // check itself
+    for (auto itor : args)
+        isLegal &= itor->checkSemantics();
     if (name == "write" || name == "writeln") {
         isLegal = true;
     } else {
@@ -423,7 +387,7 @@ bool CaseStm::checkSemantics() {
     for (bool &i : flag)
         i = false;
     for (auto situation : situations)
-        for (Exp *match_item : situation->caseVec) {
+        for (auto match_item : situation->caseVec) {
             int id = is_int ? (match_item->returnVal->val.intVal + 32768) : ((int)match_item->returnVal->val.charVal);
             if (flag[id]) {
                 char info[200];
@@ -452,9 +416,6 @@ bool ForStm::checkSemantics() {
 }
 
 bool GotoStm::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
@@ -465,13 +426,10 @@ bool GotoStm::checkSemantics() {
 }
 
 bool IfStm::checkSemantics() {
-    // check children
     isLegal &= condition->checkSemantics();
     isLegal &= trueBody->checkSemantics();
     if (falseBody != nullptr)
         isLegal &= falseBody->checkSemantics();
-    // check between children
-    // check itself
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -484,9 +442,6 @@ bool IfStm::checkSemantics() {
 }
 
 bool LabelStm::checkSemantics() {
-    // check children
-    // check between children
-    // check itself
     isLegal &= canFindLabel(label, this->father);
     if (!isLegal) {
         char info[200];
@@ -497,11 +452,8 @@ bool LabelStm::checkSemantics() {
 }
 
 bool RepeatStm::checkSemantics() {
-    // check children
     isLegal &= condition->checkSemantics();
     isLegal &= loop->checkSemantics();
-    // check between children
-    // check itself
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -514,11 +466,8 @@ bool RepeatStm::checkSemantics() {
 }
 
 bool WhileStm::checkSemantics() {
-    // check children
     isLegal &= condition->checkSemantics();
     isLegal &= loop->checkSemantics();
-    // check between children
-    // check itself
     if (isTypeBoolean(condition->returnType))
         isLegal &= true;
     else {
@@ -651,7 +600,7 @@ bool UnaryExp::checkSemantics() {
                               "is unrecognised.");
                 yyerror(this, info);
                 isLegal = false;
-            }
+            } break;
         }
     return isLegal;
 }
@@ -940,11 +889,8 @@ bool BinaryExp::checkSemantics() {
 }
 
 bool CallExp::checkSemantics() {
-    // check children
-    for (Exp *iter : args)
-        isLegal &= iter->checkSemantics();
-    // check between children
-    // check itself
+    for (auto itor : args)
+        isLegal &= itor->checkSemantics();
     FuncDef *function = findFunction(name, this->father);
     if (function == nullptr) {
         isLegal = false;
