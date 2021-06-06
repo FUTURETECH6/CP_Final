@@ -13,38 +13,40 @@ namespace tree {
     class Stm; /* objects that don't return values */
     class Exp; /* objects that return values */
 
-    /* Stm */
-    class AssignStm;
-    class IfStm;
-    class ForStm;
-    class WhileStm;
-    class GotoStm;
-    class LabelStm;
-    class RepeatStm;
-    class CallStm;
-    class CaseStm;
-
-    /* Exp */
-    class UnaryExp;
-    class BinaryExp;
-    class ConstantExp;
-    class VariableExp;
-    class CallExp;
+    /* Clause */
+    class AssignStm;  /* assignment clause */
+    class IfStm;  /* select clause */
+    class ForStm; /* for clause */
+    class WhileStm; /* while clause */
+    class GotoStm;  /* goto clause */
+    class LabelStm; /* label clause */
+    class RepeatStm;  /* repeat clause */
+    class CallStm;  /* call function */
+    class CaseStm;  /* case clause */
+    
+    
+    /* Expression */
+    class UnaryExp; /* Unary operator expression */ 
+    class BinaryExp; /* binary operator expression */
+    class ConstantExp;  /* constant expression */
+    class VariableExp;  /* id expression */
+    class CallExp;  /* function call expression */
+    
 
     /* Block */
-    class Program;
-    class Routine;
-    class Define;
-    class Body;
-    class Situation;
+    class Program;  /* root of code */
+    class Routine;  
+    class Define;   /* root of definitions */
+    class Body; /* root of sentence block */
+    class Situation;  /* root of case clause */
 
     /* Define */
-    class TypeDef;
-    class VarDef;
-    class LabelDef;
-    class ConstDef;
-    class FuncDef;
-
+    class TypeDef;  /* define a single type */
+    class VarDef; /* define a variable */
+    class LabelDef; /* define a label */
+    class ConstDef; /* define a constant */
+    class FuncDef;  /* define a function */
+    
     /* Type */
     class Type;
 
@@ -390,7 +392,7 @@ namespace tree {
     };
 
     void visualizeTree(std::string filename, Base *root);
-    Type *copyType(Type *origin);
+    Type *copyType(Type *src);
     bool isSameType(Type *type1, Type *type2);
     Base *findName(const std::string &name, Base *node);
     bool canFindLabel(const int &label, Base *node);
@@ -399,5 +401,5 @@ namespace tree {
     Type *findVar(const std::string &typeName, Base *node);
     FuncDef *findFunction(const std::string &typeName, Base *node);
 
-}  // namespace tree
+}  
 #endif

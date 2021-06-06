@@ -29,7 +29,7 @@ std::string print_rec(tree::Value *value, int layer) {
                 str.append(print_rec(child, layer + 1));
         }
         default: {
-            str.append("\"There is something wrong. The type is unrecognised.\"");
+            str.append("\"There is something wrong. The type is unrecognized.\"");
         }
     }
     return str;
